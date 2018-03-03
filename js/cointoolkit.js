@@ -854,15 +854,13 @@ $(document).ready(function() {
 					},
 					success: function(data) {
 						if (coinjs.debug) {console.log(data)};
-						if (data.outputs.length > index) {
-							callback(data.outputs[index].amount/100);
-						} else {
-							callback(false);
+						var result = false;
+						for(var i=0;i<data.outputs.length;i++){
+							if (data.outputs[i].n == index) {result=data.outputs[i].amount/100};
 						}
-	
+						callback(result);
 					},
 				});
-	
 			}
 		},
 		broadcast: function(endpoint) {
