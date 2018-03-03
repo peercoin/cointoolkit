@@ -2231,8 +2231,12 @@ var bcBasedExplorer = {
 				tx.addoutput(a, $(".amount",o).val());
 			} else if (((a!="") && ad.version === 42) && $(".amount",o).val()!=""){ // stealth address
 				tx.addstealth(ad, $(".amount",o).val());
-			} else if (((($("#opReturn").is(":checked")) && a.match(/^[a-f0-9]+$/ig)) && a.length<160) && (a.length%2)==0) { // data
-				tx.adddata(a);
+			} else if ($("#opReturn").is(":checked")) { // data
+				if ($("#opReturnText").is(":checked")) {
+					tx.addTextData(a);
+				} else {
+					tx.addHexData(a);
+				}
 			} else { // neither address nor data
 				$(o).addClass('has-error');
 				$('#putTabs a[href="#txoutputs"]').attr('style','color:#a94442;');
@@ -2361,6 +2365,32 @@ var bcBasedExplorer = {
 
 		var host = $(this).attr('rel');
 		providers[$("#coinSelector").val()].listUnspent[host](redeem);
+	});
+
+	$("#opReturn").change(function() {
+		if ($(this).is(":checked")) {
+			$("#opReturnText")
+				.removeAttr("disabled")
+				.parent()
+				.removeAttr("disabled");
+		} else {
+			$("#opReturnText")
+				.prop("checked", false)
+				.attr("disabled", true)
+				.change()
+				.parent()
+				.attr("disabled", true);
+		}
+	});
+
+	$("#opReturnText").change(function() {
+		if ($(this).is(":checked")) {
+			$("#opReturnMessage").addClass("hidden");
+			$("#opReturnTextMessage").removeClass("hidden");
+		} else {
+			$("#opReturnMessage").removeClass("hidden");
+			$("#opReturnTextMessage").addClass("hidden");
+		}
 	});
 
 	$("#optionsCollapse").click(function(){

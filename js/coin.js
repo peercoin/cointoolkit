@@ -995,18 +995,29 @@
 		}
 
 		/* add data to a transaction */
-		r.adddata = function(data){
-			var r = false;
-			if(((data.match(/^[a-f0-9]+$/gi)) && data.length<160) && (data.length%2)==0) {
-				var s = coinjs.script();
-				s.writeOp(106); // OP_RETURN
-				s.writeBytes(Crypto.util.hexToBytes(data));
-				o = {};
-				o.value = 0;
-				o.script = s;
-				return this.outs.push(o);
+		r.addHexData = function(hexString){
+			if(((hexString.match(/^[a-f0-9]+$/gi)) && hexString.length<160) && (hexString.length%2)==0) {
+				return r.addOpReturnData(Crypto.util.hexToBytes(hexString))
 			}
-			return r;
+			return false;
+		}
+
+		r.addTextData = function(text) {
+			var data = Crypto.charenc.Binary.stringToBytes(text);
+			if (data.length <= 80) {
+				return r.addOpReturnData(data);
+			}
+			return false;
+		}
+
+		r.addOpReturnData = function(bytes) {
+			var s = coinjs.script();
+			s.writeOp(106); // OP_RETURN
+			s.writeBytes(bytes);
+			o = {};
+			o.value = 0;
+			o.script = s;
+			return this.outs.push(o);
 		}
 
 		/* add unspent to transaction */
