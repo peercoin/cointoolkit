@@ -1270,6 +1270,41 @@ var bcBasedExplorer = {
 	var providers = {
 		bitcoin: {
 			listUnspent: {
+				"blockcypher": function(redeem){
+					$.ajax ({
+						type: "GET",
+						url: "https://api.blockcypher.com/v1/btc/main/addrs/"+redeem.addr+"?unspentOnly=true&includeScript=true",
+						dataType: "json",
+						error: function(data) {
+							$("#redeemFromStatus").removeClass('hidden').html(msgError);
+							$("#redeemFromBtn").html("Load").attr('disabled',false);
+						},
+						success: function(data) {
+							if (coinjs.debug) {console.log(data)};
+							if ((data.txrefs)){
+								$("#redeemFromAddress").removeClass('hidden').html(
+									'<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="https://api.blockcypher.com/v1/btc/main/addrs/"'+
+									redeem.addr+'" target="_blank">'+redeem.addr+'</a>');
+								for(i = 0; i < data.txrefs.length; ++i){
+									var o = data.txrefs[i];
+									var tx = ""+o.tx_hash;
+									if(tx.match(/^[a-f0-9]+$/)){
+										var n = o.tx_output_n;
+										var script = (redeem.isMultisig==true) ? $("#redeemFrom").val() : o.script;
+										var amount = (o.value /100000000).toFixed(8);;
+										addOutput(tx, n, script, amount);
+									}
+								}
+							} else {
+								$("#redeemFromStatus").removeClass('hidden').html('<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs.');
+							}
+						},
+						complete: function(data, status) {
+							$("#redeemFromBtn").html("Load").attr('disabled',false);
+							totalInputAmount();
+						}
+					});
+				},
 				"cryptoid": function(redeem){
 					$.ajax ({
 						type: "GET",
@@ -1366,6 +1401,34 @@ var bcBasedExplorer = {
 				},
 			},
 			broadcast: {
+				"blockcypher": function(thisbtn){
+					var orig_html = $(thisbtn).html();
+					$(thisbtn).html('Please wait, loading... <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>').attr('disabled',true);
+					$.ajax ({
+						type: "POST",
+						url: "https://api.blockcypher.com/v1/btc/main/txs/push?token=c351f5d9782543b8b0416b8dff76b8e2",
+						data: {"tx":$("#rawTransaction").val()},
+						dataType: "json",
+						error: function(data) {
+							var r = '';
+							r += (data.data) ? data.data : '';
+							r += (data.message) ? ' '+data.message : '';
+							r = (r!='') ? r : ' Failed to broadcast. Internal server error';
+							$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html(r).prepend('<span class="glyphicon glyphicon-exclamation-sign"></span>');
+						},
+						success: function(data) {
+							if(data.hash){
+								$("#rawTransactionStatus").addClass('alert-success').removeClass('alert-danger').removeClass("hidden").html(' Txid: '+data.hash);
+							} else {
+								$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html(' Unexpected error, please try again').prepend('<span class="glyphicon glyphicon-exclamation-sign"></span>');
+							}				
+						},
+						complete: function(data, status) {
+							$("#rawTransactionStatus").fadeOut().fadeIn();
+							$(thisbtn).html(orig_html).attr('disabled',false);				
+						}
+					});
+				},
 				"blockr.io": function(thisbtn){
 					var orig_html = $(thisbtn).html();
 					$(thisbtn).html('Please wait, loading... <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>').attr('disabled',true);
@@ -1421,7 +1484,45 @@ var bcBasedExplorer = {
 					});
 				}
 			},
+			getTransaction: {
+				"blockcypher": function(txid, callback) {
+					$.ajax ({
+						type: "GET",
+						url: "https://api.blockcypher.com/v1/btc/main/txs/"+txid+"?includeHex=true",
+						dataType: "json",
+						error: function(data) {
+							callback(false);
+						},
+						success: function(data) {
+							if (coinjs.debug) {console.log(data)};
+							if (data.hex){
+								callback(data.hex);
+							} else {
+								callback(false);
+							}
+						}
+					});
+				}
+			},
 			getInputAmount: {
+				"blockcypher": function(txid, index, callback) {
+					$.ajax ({
+						type: "GET",
+						url: "https://api.blockcypher.com/v1/btc/main/txs/"+txid,
+						dataType: "json",
+						error: function(data) {
+							callback(false);
+						},
+						success: function(data) {
+							if (coinjs.debug) {console.log(data)};
+							if (data.outputs && data.outputs[index]){
+								callback(parseInt(data.outputs[index].value, 10));
+							} else {
+								callback(false);
+							}
+						}
+					});
+				},
 				"blockr.io": function(txid, index, callback) {
 					$.ajax ({
 						type: "GET",
