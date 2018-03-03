@@ -1653,12 +1653,18 @@ var bcBasedExplorer = {
 		},
 		peercoin_testnet: {
 			listUnspent: {
+				"iquidus": iquidusBasedExplorer.listUnspent('https://explorer.peercoin.net:8000'),
 				"atlas": mercatorBasedExplorer.listUnspent('http://137.74.40.81:4000/')
 			},
 			broadcast: {
+				"iquidus": iquidusBasedExplorer.broadcast('https://explorer.peercoin.net:8000'),
 				"atlas": mercatorBasedExplorer.broadcast('http://137.74.40.81:4000/')
 			},
+			getTransaction: {
+				"iquidus": iquidusBasedExplorer.getTransaction('https://explorer.peercoin.net:8000')
+			},
 			getInputAmount: {
+				"iquidus": iquidusBasedExplorer.getInputAmount('https://explorer.peercoin.net:8000'),
 				"atlas": mercatorBasedExplorer.getInputAmount('http://137.74.40.81:4000/')
 			}
 		},
