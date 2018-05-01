@@ -10199,6 +10199,8 @@ LedgerBtc.prototype.signP2SHTransaction_async = function(inputs, associatedKeyse
 
 
 LedgerBtc.prototype.compressPublicKey = function (publicKey) {
+    if (publicKey.length != 65)
+        return publicKey;
 	var prefix = ((publicKey[64] & 1) != 0 ? 0x03 : 0x02);
 	var prefixBuffer = Buffer.alloc(1);
 	prefixBuffer[0] = prefix;
