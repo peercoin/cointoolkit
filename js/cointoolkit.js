@@ -651,8 +651,12 @@ $(document).ready(function() {
 
 							if (currenttransaction.ins[0].script.buffer.slice(-1) == coinjs.opcode.OP_CHECKMULTISIG) {
 								// check if public key is part of multisig
+								var timeStamp = undefined;
+								if (isPeercoin) {
+									timeStamp = currenttransaction.nTime;
+									}
 
-								btc.signP2SHTransaction_async(inputs, paths, outputsBuffer, undefined, undefined, currenttransaction.nTime).then(function(result) {
+								btc.signP2SHTransaction_async(inputs, paths, outputsBuffer, undefined, undefined, timeStamp).then(function(result) {
 									var success=false;
 									$.each(result, function(idx,itm) {
 										if (currenttransaction.addsignaturemultisig(idx,itm)) {
