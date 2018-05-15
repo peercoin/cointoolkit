@@ -1486,7 +1486,7 @@ var bcBasedExplorer = {
 				}
 			},
 			getTransaction: {
-				"blockcypher": function(txid, callback) {
+				"blockcypher": function(txid, index, callback) {
 					$.ajax ({
 						type: "GET",
 						url: "https://api.blockcypher.com/v1/btc/main/txs/"+txid+"?includeHex=true",
@@ -1497,7 +1497,7 @@ var bcBasedExplorer = {
 						success: function(data) {
 							if (coinjs.debug) {console.log(data)};
 							if (data.hex){
-								callback(data.hex);
+								callback([data.hex,index]);
 							} else {
 								callback(false);
 							}
