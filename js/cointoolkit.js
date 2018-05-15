@@ -617,12 +617,15 @@ $(document).ready(function() {
 
 			var btc = new ledger.btc(comm);
 			var path = coinjs.ledgerPath;
+			var isPeercoin = 1;
+			if ($("#coinSelector").val() == "bitcoin") {
+				isPeercoin = 0;
+				}
 
 			btc.getWalletPublicKey_async(path).then(function(result) {
 				publicKey = result.publicKey;
 				console.log("path",path,"address",result.bitcoinAddress,"pubkey",result.publicKey);
-				var txn = btc.splitTransaction(currenttransaction.serialize(),1);
-
+				var txn = btc.splitTransaction(currenttransaction.serialize(),isPeercoin);
 				var outputsBuffer = Crypto.util.bytesToHex(btc.serializeTransactionOutputs(txn));
 
 				var inputs = [];
@@ -639,7 +642,7 @@ $(document).ready(function() {
 
 				for (var i = 0; i < currenttransaction.ins.length; i++) {
 					var result = providers[$("#coinSelector").val()].getTransaction[toolkit.getTransaction](currenttransaction.ins[i].outpoint.hash,i,function(result) {
-						inputs.push([btc.splitTransaction(result[0],1),currenttransaction.ins[result[1]].outpoint.index,script]);
+						inputs.push([btc.splitTransaction(result[0],isPeercoin),currenttransaction.ins[result[1]].outpoint.index,script]);
 						paths.push(path);
 						if (inputs.length == currenttransaction.ins.length) {
 							// we are ready
