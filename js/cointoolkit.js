@@ -1548,6 +1548,116 @@ var bcBasedExplorer = {
 				}
 			}
 		},
+		bitcoin_cash: {
+			listUnspent: {
+				"btc_com": function(redeem){
+					$.ajax ({
+						type: "GET",
+						//https://bch-chain.api.btc.com/v3/address/15urYnyeJe3gwbGJ74wcX89Tz7ZtsFDVew/unspent
+						url: "https://bitcoincash.blockexplorer.com/api/addr/"+redeem.addr+"/utxo/",
+						dataType: "json",
+						error: function(data) {
+							$("#redeemFromStatus").removeClass('hidden').html(msgError);
+							$("#redeemFromBtn").html("Load").attr('disabled',false);
+						},
+						success: function(data) {
+							if (coinjs.debug) {console.log(data)};
+							if ((data && data.length)){
+								$("#redeemFromAddress").removeClass('hidden').html(
+									'<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="https://api.blockcypher.com/v1/btc/main/addrs/"'+
+									redeem.addr+'" target="_blank">'+redeem.addr+'</a>');
+								for(i = 0; i < data.length; ++i){
+									var o = data[i];
+									var tx = ""+o.txid;
+									if(tx.match(/^[a-f0-9]+$/)){
+										var n = o.vout;
+										var script = (redeem.isMultisig==true) ? $("#redeemFrom").val() : o.scriptPubKey;
+										var amount = (o.satoshis /100000000).toFixed(8);;
+										addOutput(tx, n, script, amount);
+									}
+								}
+							} else {
+								$("#redeemFromStatus").removeClass('hidden').html('<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs.');
+							}
+						},
+						complete: function(data, status) {
+							$("#redeemFromBtn").html("Load").attr('disabled',false);
+							totalInputAmount();
+						}
+					});
+				}
+			},
+			broadcast: {
+				"btc_com": function(thisbtn){
+					var orig_html = $(thisbtn).html();
+					$(thisbtn).html('Please wait, loading... <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>').attr('disabled',true);
+					$.ajax ({
+						type: "POST",
+						url: "https://bitcoincash.blockexplorer.com/api/tx/send",
+						data: {"rawtx":$("#rawTransaction").val()},
+						dataType: "json",
+						error: function(data) {
+							var r = '';
+							r += (data.data) ? data.data : '';
+							r += (data.message) ? ' '+data.message : '';
+							r = (r!='') ? r : ' Failed to broadcast. Internal server error';
+							$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html(r).prepend('<span class="glyphicon glyphicon-exclamation-sign"></span>');
+						},
+						success: function(data) {
+							if(data.txid){
+								$("#rawTransactionStatus").addClass('alert-success').removeClass('alert-danger').removeClass("hidden").html(' Txid: '+data.txid);
+							} else {
+								$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html(' Unexpected error, please try again').prepend('<span class="glyphicon glyphicon-exclamation-sign"></span>');
+							}
+						},
+						complete: function(data, status) {
+							$("#rawTransactionStatus").fadeOut().fadeIn();
+							$(thisbtn).html(orig_html).attr('disabled',false);
+						}
+					});
+				}
+			},
+			getTransaction: {
+				"btc_com": function(txid, index, callback) {
+					$.ajax ({
+						type: "GET",
+						url: "https://bitcoincash.blockexplorer.com/api/rawtx/"+txid,
+						dataType: "json",
+						error: function(data) {
+							callback(false);
+						},
+						success: function(data) {
+							if (coinjs.debug) {console.log(data)};
+							if (data.rawtx){
+								callback([data.rawtx,index]);
+							} else {
+								callback(false);
+							}
+						}
+					});
+				}
+			},
+			getInputAmount: {
+				"btc_com": function(txid, index, callback) {
+					$.ajax ({
+						type: "GET",
+						url: "https://bitcoincash.blockexplorer.com/api/tx/"+txid,
+						dataType: "json",
+						error: function(data) {
+							callback(false);
+						},
+						success: function(data) {
+							if (coinjs.debug) {console.log(data)};
+							if (data.vout && data.vout[index]){
+								callback(data.vout[index].value*100000000);
+							} else {
+								callback(false);
+							}
+						}
+					});
+				}
+			}
+		},
 		litecoin: {
 			listUnspent: {
 				"chain.so": function(redeem){
