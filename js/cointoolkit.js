@@ -1550,10 +1550,9 @@ var bcBasedExplorer = {
 		},
 		bitcoin_cash: {
 			listUnspent: {
-				"btc_com": function(redeem){
+				"blockexplorer": function(redeem){
 					$.ajax ({
 						type: "GET",
-						//https://bch-chain.api.btc.com/v3/address/15urYnyeJe3gwbGJ74wcX89Tz7ZtsFDVew/unspent
 						url: "https://bitcoincash.blockexplorer.com/api/addr/"+redeem.addr+"/utxo/",
 						dataType: "json",
 						error: function(data) {
@@ -1564,8 +1563,8 @@ var bcBasedExplorer = {
 							if (coinjs.debug) {console.log(data)};
 							if ((data && data.length)){
 								$("#redeemFromAddress").removeClass('hidden').html(
-									'<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="https://api.blockcypher.com/v1/btc/main/addrs/"'+
-									redeem.addr+'" target="_blank">'+redeem.addr+'</a>');
+									'<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="https://bitcoincash.blockexplorer.com/api/addr/"'+
+									redeem.addr+'" target="_blank">'+redeem.addr+'/utxo/</a>');
 								for(i = 0; i < data.length; ++i){
 									var o = data[i];
 									var tx = ""+o.txid;
@@ -1588,7 +1587,7 @@ var bcBasedExplorer = {
 				}
 			},
 			broadcast: {
-				"btc_com": function(thisbtn){
+				"blockexplorer": function(thisbtn){
 					var orig_html = $(thisbtn).html();
 					$(thisbtn).html('Please wait, loading... <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>').attr('disabled',true);
 					$.ajax ({
@@ -1618,7 +1617,7 @@ var bcBasedExplorer = {
 				}
 			},
 			getTransaction: {
-				"btc_com": function(txid, index, callback) {
+				"blockexplorer": function(txid, index, callback) {
 					$.ajax ({
 						type: "GET",
 						url: "https://bitcoincash.blockexplorer.com/api/rawtx/"+txid,
@@ -1638,7 +1637,7 @@ var bcBasedExplorer = {
 				}
 			},
 			getInputAmount: {
-				"btc_com": function(txid, index, callback) {
+				"blockexplorer": function(txid, index, callback) {
 					$.ajax ({
 						type: "GET",
 						url: "https://bitcoincash.blockexplorer.com/api/tx/"+txid,
