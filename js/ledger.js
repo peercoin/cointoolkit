@@ -9892,10 +9892,10 @@ LedgerBtc.prototype.signTransaction_async = function (path, lockTime, sigHashTyp
 	})
 }
 
-LedgerBtc.prototype.signMessageNew_async = function(path, messageHex) {
+LedgerBtc.prototype.signMessageNew_async = function(path, messageText) {
 	var splitPath = utils.splitPath(path);
 	var offset = 0;
-	var message = new Buffer(messageHex, 'hex');
+	var message = new Buffer(messageText);
 	var apdus = [];
 	var response = [];
 	var self = this;	
@@ -9949,7 +9949,9 @@ LedgerBtc.prototype.signMessageNew_async = function(path, messageHex) {
 					s = s.slice(1);
 				}				
 				result['s'] = s.toString('hex');
-				return result;
+				var v = result['v'] + 27 + 4;
+				var signature = Buffer.from(v.toString(16) + result['r'] + result['s'], 'hex').toString('base64');
+				return signature;
 		})
 	})		
 }

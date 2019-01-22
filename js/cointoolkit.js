@@ -612,6 +612,18 @@ $(document).ready(function() {
 		}).fail(function(ex) {console.log(ex);});
 	}
 
+	function signWithLedgerAddress(messageText, callback) {
+		coinjs.comm.create_async(0, true).then(function(comm) {
+
+			var btc = new ledger.btc(comm);
+			var path = coinjs.ledgerPath;
+
+			btc.signMessageNew_async(path, messageText).then(function(result) {
+				callback(result);
+			}).fail(function(ex) {console.log(path,ex);});
+		}).fail(function(ex) {console.log(ex);});
+	}
+
 	function getLedgerSignatures(currenttransaction,callback) {
 		coinjs.comm.create_async(0, true).then(function(comm) {
 
@@ -2077,11 +2089,15 @@ var bcBasedExplorer = {
 		/* new -> address code */
 
 	$("#ledgerKeysBtn").click(function(){
-	   getLedgerAddress(function(result) {
-			console.log("address:",coinjs.ledgerPath,result);
-			$("#newGeneratedAddress").val(result.bitcoinAddress);
-			
-			$("#newPubKey").val(result.publicKey);
+		if($("#newBrainwallet").is(":checked")) {
+				signWithLedgerAddress($("#brainwallet").val(),function(result) {
+				console.log("signature:",coinjs.ledgerPath,result);
+			});
+		} else
+			getLedgerAddress(function(result) {
+				console.log("address:",coinjs.ledgerPath,result);
+				$("#newGeneratedAddress").val(result.bitcoinAddress);
+				$("#newPubKey").val(result.publicKey);
 			}); 
 	});
 
