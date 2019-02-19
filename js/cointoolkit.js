@@ -670,6 +670,7 @@ $(document).ready(function() {
 
 								btc.signP2SHTransaction_async(inputs, paths, outputsBuffer, undefined, undefined, timeStamp).then(function(result) {
 									var success=false;
+									console.log("signature result",result);
 									$.each(result, function(idx,itm) {
 										if (currenttransaction.addsignaturemultisig(idx,itm)) {
 											success=true;
