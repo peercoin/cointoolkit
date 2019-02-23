@@ -654,12 +654,17 @@ $(document).ready(function() {
 
 				for (var i = 0; i < currenttransaction.ins.length; i++) {
 					var result = providers[$("#coinSelector").val()].getTransaction[toolkit.getTransaction](currenttransaction.ins[i].outpoint.hash,i,function(result) {
-						inputs.push([btc.splitTransaction(result[0],isPeercoin),currenttransaction.ins[result[1]].outpoint.index,script]);
+						inputs.push([result[1],btc.splitTransaction(result[0],isPeercoin),currenttransaction.ins[result[1]].outpoint.index,script]);
 						paths.push(path);
 						if (inputs.length == currenttransaction.ins.length) {
 							// we are ready
 				 
 							console.log("raw inputs",inputs,"paths",paths,"outputs",outputsBuffer,"time",currenttransaction.nTime);
+
+							// sort array
+
+							inputs.sort((a, b) => (a[0] > b[0]) ? 1 : -1);
+							inputs.map(item=> {item.splice(0,1)});
 
 							if (currenttransaction.ins[0].script.buffer.slice(-1) == coinjs.opcode.OP_CHECKMULTISIG) {
 								// check if public key is part of multisig
