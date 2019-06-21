@@ -615,16 +615,19 @@ $(document).ready(function() {
 		}
 	}
 
-	function signWithLedgerAddress(messageText, callback) {
-		coinjs.comm.create_async(0, true).then(function(comm) {
-
-			var btc = new ledger.btc(comm);
-			var path = coinjs.ledgerPath;
-
-			btc.signMessageNew_async(path, messageText).then(function(result) {
-				callback(result);
-			}).fail(function(ex) {console.log(path,ex);});
-		}).fail(function(ex) {console.log(ex);});
+	async function signWithLedgerAddress(messageText, callback) {
+		try {
+			const transport = await window.TransportWebUSB.create();
+			transport.setDebugMode(true);
+			const appBtc = new window.Btc(transport);
+			result = await appBtc.signMessageNew(
+				coinjs.ledgerPath,
+				messageText
+				);
+			callback(result);
+		} catch (e) {
+			console.log(e);
+		}
 	}
 
 	function getLedgerSignatures(currenttransaction,callback) {
