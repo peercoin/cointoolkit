@@ -604,7 +604,7 @@ $(document).ready(function() {
 		try {
 			const transport = await window.TransportWebUSB.create();
 			transport.setDebugMode(true);
-			const appBtc = new window.AppBtc(transport);
+			const appBtc = new window.Btc(transport);
 			const { bitcoinAddress } =  await appBtc.getWalletPublicKey(
 				coinjs.ledgerPath,
 				false
