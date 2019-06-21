@@ -603,7 +603,6 @@ $(document).ready(function() {
 	async function getLedgerAddress(callback) {
 		try {
 			const transport = await window.TransportWebUSB.create();
-			transport.setDebugMode(true);
 			const appBtc = new window.Btc(transport);
 			result = await appBtc.getWalletPublicKey(
 				coinjs.ledgerPath,
@@ -618,7 +617,6 @@ $(document).ready(function() {
 	async function signWithLedgerAddress(messageText, callback) {
 		try {
 			const transport = await window.TransportWebUSB.create();
-			transport.setDebugMode(true);
 			const appBtc = new window.Btc(transport);
 			result = await appBtc.signMessageNew(
 				coinjs.ledgerPath,
@@ -630,83 +628,88 @@ $(document).ready(function() {
 		}
 	}
 
-	function getLedgerSignatures(currenttransaction,callback) {
-		coinjs.comm.create_async(0, true).then(function(comm) {
+	async function getLedgerSignatures(currenttransaction,callback) {
+		try {
+			const transport = await window.TransportWebUSB.create();
+			const appBtc = new window.Btc(transport);
 
-			var btc = new ledger.btc(comm);
-			var path = coinjs.ledgerPath;
-			var isPeercoin = 1;
+			var isPeercoin = true;
 			if ($("#coinSelector").val() == "bitcoin") {
-				isPeercoin = 0;
+				isPeercoin = false;
 				}
 
-			btc.getWalletPublicKey_async(path).then(function(result) {
-				publicKey = result.publicKey;
-				console.log("path",path,"address",result.bitcoinAddress,"pubkey",result.publicKey);
-				var txn = btc.splitTransaction(currenttransaction.serialize(),isPeercoin);
-				var outputsBuffer = Crypto.util.bytesToHex(btc.serializeTransactionOutputs(txn));
+			result = await appBtc.getWalletPublicKey(
+				coinjs.ledgerPath,
+				false
+				);
 
-				var inputs = [];
-				var paths = [];
+			publicKey = result.publicKey;
+			console.log("path",path,"address",result.bitcoinAddress,"pubkey",result.publicKey);
+			var txn = appBtc.splitTransaction(currenttransaction.serialize(),false,isPeercoin);
+			var outputsBuffer = Crypto.util.bytesToHex(appBtc.serializeTransactionOutputs(txn));
 
-				// TODO: check if gettransaction is available
+			var inputs = [];
+			var paths = [];
 
-				// extract script part
-				script = Crypto.util.bytesToHex(currenttransaction.ins[0].script.buffer);
+			// TODO: check if gettransaction is available
 
-				if (currenttransaction.ins[0].script.buffer.slice(-1) == coinjs.opcode.OP_CHECKMULTISIG && currenttransaction.ins[0].script.chunks.slice(-1)[0] != coinjs.opcode.OP_CHECKMULTISIG) {
-					script = Crypto.util.bytesToHex(currenttransaction.ins[0].script.chunks.slice(-1)[0]);
-					}
+			// extract script part
+			script = Crypto.util.bytesToHex(currenttransaction.ins[0].script.buffer);
 
-				for (var i = 0; i < currenttransaction.ins.length; i++) {
-					var result = providers[$("#coinSelector").val()].getTransaction[toolkit.getTransaction](currenttransaction.ins[i].outpoint.hash,i,function(result) {
-						inputs.push([result[1],btc.splitTransaction(result[0],isPeercoin),currenttransaction.ins[result[1]].outpoint.index,script]);
-						paths.push(path);
-						if (inputs.length == currenttransaction.ins.length) {
-							// we are ready
-				 
-							console.log("raw inputs",inputs,"paths",paths,"outputs",outputsBuffer,"time",currenttransaction.nTime);
+			if (currenttransaction.ins[0].script.buffer.slice(-1) == coinjs.opcode.OP_CHECKMULTISIG && currenttransaction.ins[0].script.chunks.slice(-1)[0] != coinjs.opcode.OP_CHECKMULTISIG) {
+				script = Crypto.util.bytesToHex(currenttransaction.ins[0].script.chunks.slice(-1)[0]);
+				}
 
-							// sort array
+			for (var i = 0; i < currenttransaction.ins.length; i++) {
+				var result = providers[$("#coinSelector").val()].getTransaction[toolkit.getTransaction](currenttransaction.ins[i].outpoint.hash,i,function(result) {
+					inputs.push([result[1],appBtc.splitTransaction(result[0],false,isPeercoin),currenttransaction.ins[result[1]].outpoint.index,script]);
+					paths.push(path);
+					if (inputs.length == currenttransaction.ins.length) {
+						// we are ready
 
-							inputs.sort((a, b) => (a[0] > b[0]) ? 1 : -1);
-							inputs.map(item=> {item.splice(0,1)});
+						console.log("raw inputs",inputs,"paths",paths,"outputs",outputsBuffer,"time",currenttransaction.nTime);
 
-							if (currenttransaction.ins[0].script.buffer.slice(-1) == coinjs.opcode.OP_CHECKMULTISIG) {
-								// check if public key is part of multisig
-								var timeStamp = undefined;
-								if (isPeercoin) {
-									timeStamp = currenttransaction.nTime;
+						// sort array
+
+						inputs.sort((a, b) => (a[0] > b[0]) ? 1 : -1);
+						inputs.map(item=> {item.splice(0,1)});
+
+						if (currenttransaction.ins[0].script.buffer.slice(-1) == coinjs.opcode.OP_CHECKMULTISIG) {
+							// check if public key is part of multisig
+							var timeStamp = undefined;
+							if (isPeercoin) {
+								timeStamp = currenttransaction.nTime;
+								}
+
+							result = await appBtc.signP2SHTransaction(inputs, paths, outputsBuffer, false, false, false, false, timeStamp);
+
+							var success=false;
+
+							console.log("signature result",result);
+							$.each(result, function(idx,itm) {
+								if (currenttransaction.addsignaturemultisig(idx,itm)) {
+									success=true;
 									}
-
-								btc.signP2SHTransaction_async(inputs, paths, outputsBuffer, undefined, undefined, timeStamp).then(function(result) {
-									var success=false;
-									console.log("signature result",result);
-									$.each(result, function(idx,itm) {
-										if (currenttransaction.addsignaturemultisig(idx,itm)) {
-											success=true;
-											}
-										});
-									if (success) {
-										callback(currenttransaction.serialize());
-										}
-									else {
-										callback(false);
-										}
-									}).fail(function(ex) {console.log(ex);});
+								});
+								if (success) {
+									callback(currenttransaction.serialize());
+									}
+								else {
+									callback(false);
+									}
 								}
-							else {
-								btc.createPaymentTransactionNew_async(inputs, paths, undefined, outputsBuffer, undefined, undefined, 1).then(function(result) {
-									callback(result);
-									}).fail(function(ex) {console.log(ex);});
-								}
+						else {
+							result = appBtc.createPaymentTransactionNew(inputs, paths, undefined, outputsBuffer, undefined, undefined, false, timeStamp);
+							callback(result);
 							}
 						});
 					}
+		} catch (e) {
+			console.log(e);
+		}
+	}
 
-			}).fail(function(ex) {console.log(path,ex);});
-		}).fail(function(ex) {console.log(ex);});
-	}	
+
 	/* external providers */
 		
 	var mercatorBasedExplorer = {
