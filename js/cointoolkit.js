@@ -661,7 +661,7 @@ $(document).ready(function() {
 				}
 
 			for (var i = 0; i < currenttransaction.ins.length; i++) {
-				var result = providers[$("#coinSelector").val()].getTransaction[toolkit.getTransaction](currenttransaction.ins[i].outpoint.hash,i,function(result) {
+				var result = providers[$("#coinSelector").val()].getTransaction[toolkit.getTransaction](currenttransaction.ins[i].outpoint.hash,i,async function(result) {
 					inputs.push([result[1],appBtc.splitTransaction(result[0],false,isPeercoin),currenttransaction.ins[result[1]].outpoint.index,script]);
 					paths.push(path);
 					if (inputs.length == currenttransaction.ins.length) {
@@ -702,8 +702,9 @@ $(document).ready(function() {
 							result = appBtc.createPaymentTransactionNew(inputs, paths, undefined, outputsBuffer, undefined, undefined, false, timeStamp);
 							callback(result);
 							}
-						});
-					}
+						}
+					});
+				}
 		} catch (e) {
 			console.log(e);
 		}
