@@ -2010,6 +2010,11 @@ window.Buffer = buffer.Buffer;
 
 	var Btc = unwrapExports(Btc_1);
 
+	var Btc$1 = /*#__PURE__*/Object.freeze({
+		default: Btc,
+		__moduleExports: Btc_1
+	});
+
 	var domain;
 
 	// This constructor is used to store event handlers. Instantiating this is
@@ -4173,8 +4178,13 @@ window.Buffer = buffer.Buffer;
 
 	var TransportWebUSB = unwrapExports(TransportWebUSB_1);
 
-	exports.Btc = Btc;
-	exports.TransportWebUSB = TransportWebUSB;
+	var TransportWebUSB$1 = /*#__PURE__*/Object.freeze({
+		default: TransportWebUSB,
+		__moduleExports: TransportWebUSB_1
+	});
+
+	exports.Btc = Btc$1;
+	exports.TransportWebUSB = TransportWebUSB$1;
 
 	Object.defineProperty(exports, '__esModule', { value: true });
 
