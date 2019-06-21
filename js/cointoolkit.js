@@ -601,15 +601,18 @@ $(document).ready(function() {
 	/* ledger */
 
 	function getLedgerAddress(callback) {
-		coinjs.comm.create_async(0, true).then(function(comm) {
-
-			var btc = new ledger.btc(comm);
-			var path = coinjs.ledgerPath;
-
-			btc.getWalletPublicKey_async(path).then(function(result) {
-				callback(result);
-			}).fail(function(ex) {console.log(path,ex);});
-		}).fail(function(ex) {console.log(ex);});
+		try {
+			const transport = await TransportWebUSB.create();
+			transport.setDebugMode(true);
+			const appBtc = new AppBtc(transport);
+			const { bitcoinAddress } = await appBtc.getWalletPublicKey(
+				coinjs.ledgerPath,
+				false
+				);
+			callback(bitcoinAddress);
+		} catch (e) {
+			console.log(e);
+		}
 	}
 
 	function signWithLedgerAddress(messageText, callback) {

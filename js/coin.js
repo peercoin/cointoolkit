@@ -12,7 +12,7 @@
 	/* public vars */
 	coinjs.debug = false;
 	coinjs.apikey = "1205735eba8c";
-	coinjs.comm = ledger.comm_u2f;
+	//coinjs.comm = ledger.comm_u2f;
 
 	/* Bitcoin by default */
 	coinjs.pub = 0x00;
