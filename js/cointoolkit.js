@@ -602,10 +602,10 @@ $(document).ready(function() {
 
 	function getLedgerAddress(callback) {
 		try {
-			const transport = await TransportWebUSB.create();
+			const transport = window.TransportWebUSB.create();
 			transport.setDebugMode(true);
-			const appBtc = new AppBtc(transport);
-			const { bitcoinAddress } = await appBtc.getWalletPublicKey(
+			const appBtc = new window.AppBtc(transport);
+			const { bitcoinAddress } =  appBtc.getWalletPublicKey(
 				coinjs.ledgerPath,
 				false
 				);
