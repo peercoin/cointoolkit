@@ -600,12 +600,12 @@ $(document).ready(function() {
 
 	/* ledger */
 
-	function getLedgerAddress(callback) {
+	async function getLedgerAddress(callback) {
 		try {
-			const transport = window.TransportWebUSB.create();
+			const transport = await window.TransportWebUSB.create();
 			transport.setDebugMode(true);
 			const appBtc = new window.AppBtc(transport);
-			const { bitcoinAddress } =  appBtc.getWalletPublicKey(
+			const { bitcoinAddress } =  await appBtc.getWalletPublicKey(
 				coinjs.ledgerPath,
 				false
 				);
