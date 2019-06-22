@@ -1653,17 +1653,19 @@ window.Buffer = buffer.Buffer;
 	    value: function signP2SHTransaction(inputs, associatedKeysets, outputScriptHex) {
 	      var lockTime = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : DEFAULT_LOCKTIME;
 	      var sigHashType = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : SIGHASH_ALL;
+	      var segwit = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
 
 	      var _this6 = this;
 
-	      var segwit = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
 	      var transactionVersion = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : DEFAULT_VERSION;
+	      var timeStamp = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : 0;
 
 	      // Inputs are provided as arrays of [transaction, output_index, redeem script, optional sequence]
 	      // associatedKeysets are provided as arrays of [path]
 	      var nullScript = Buffer.alloc(0);
 	      var nullPrevout = Buffer.alloc(0);
 	      var defaultVersion = Buffer.alloc(4);
+	      var defaultTime = Buffer.alloc(4);
 	      defaultVersion.writeUInt32LE(transactionVersion, 0);
 	      var trustedInputs = [];
 	      var regularOutputs = [];
@@ -1675,6 +1677,9 @@ window.Buffer = buffer.Buffer;
 	        version: defaultVersion
 	      };
 
+	      if (timeStamp) {
+	        targetTransaction.timestamp = timeStamp;
+	      }
 	      var getTrustedInputCall = segwit ? this.getTrustedInputBIP143.bind(this) : this.getTrustedInput.bind(this);
 	      var outputScript = Buffer.from(outputScriptHex, "hex");
 
