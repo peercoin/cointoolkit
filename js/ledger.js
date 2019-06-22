@@ -3646,9 +3646,16 @@ window.Buffer = buffer.Buffer;
 
 	});
 
-	unwrapExports(lib$2);
+	var index$2 = unwrapExports(lib$2);
 	var lib_1$2 = lib$2.log;
 	var lib_2$2 = lib$2.listen;
+
+	var index$3 = /*#__PURE__*/Object.freeze({
+		default: index$2,
+		__moduleExports: lib$2,
+		log: lib_1$2,
+		listen: lib_2$2
+	});
 
 	var webusb = createCommonjsModule(function (module, exports) {
 
@@ -4186,6 +4193,7 @@ window.Buffer = buffer.Buffer;
 
 	exports.Btc = Btc$1;
 	exports.TransportWebUSB = TransportWebUSB$1;
+	exports.Log = index$3;
 
 	Object.defineProperty(exports, '__esModule', { value: true });
 
@@ -4193,3 +4201,4 @@ window.Buffer = buffer.Buffer;
 
 window.Btc = NewLedger.Btc.default;
 window.TransportWebUSB = NewLedger.TransportWebUSB.default;
+window.Log = NewLedger.Log.default;
