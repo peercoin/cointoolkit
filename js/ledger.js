@@ -1038,6 +1038,7 @@ window.Buffer = buffer.Buffer;
 	        throw new Error("getTrustedInput: locktime & outputs is expected");
 	      }
 	      var isDecred = additionals.includes("decred");
+	      var isXST = additionals.includes("stealthcoin");
 	      var processScriptBlocks = function processScriptBlocks(script, sequence) {
 	        var scriptBlocks = [];
 	        var offset = 0;
@@ -1062,19 +1063,20 @@ window.Buffer = buffer.Buffer;
 	        });
 	      };
 
-	      var processWholeScriptBlock = function processWholeScriptBlock(script, sequence) {
-	        return _this.getTrustedInputRaw(Buffer.concat([script, sequence]));
+	      var processWholeScriptBlock = function processWholeScriptBlock(block) {
+	        return _this.getTrustedInputRaw(block);
 	      };
 
 	      var processInputs = function processInputs() {
 	        return (0, utils.eachSeries)(inputs, function (input) {
 	          var treeField = isDecred ? input.tree || Buffer.from([0x00]) : Buffer.alloc(0);
-	          var data = Buffer.concat([input.prevout, treeField, _this.createVarint(input.script.length)]);
+	          var data = Buffer.concat([input.prevout, treeField, isXST ? Buffer.from([0x00]) : _this.createVarint(input.script.length)]);
 	          return _this.getTrustedInputRaw(data).then(function () {
 	            // iteration (eachSeries) ended
 	            // TODO notify progress
 	            // deferred.notify("input");
-	            return isDecred ? processWholeScriptBlock(input.script, input.sequence) : processScriptBlocks(input.script, input.sequence);
+	            // Reference: https://github.com/StealthSend/Stealth/commit/5be35d6c2c500b32ed82e5d6913d66d18a4b0a7f#diff-e8db9b851adc2422aadfffca88f14c91R566
+	            return isDecred ? processWholeScriptBlock(Buffer.concat([input.script, input.sequence])) : isXST ? processWholeScriptBlock(input.sequence) : processScriptBlocks(input.script, input.sequence);
 	          });
 	        }).then(function () {
 	          var data = _this.createVarint(outputs.length);
@@ -1651,11 +1653,12 @@ window.Buffer = buffer.Buffer;
 	    value: function signP2SHTransaction(inputs, associatedKeysets, outputScriptHex) {
 	      var lockTime = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : DEFAULT_LOCKTIME;
 	      var sigHashType = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : SIGHASH_ALL;
+	      var segwit = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
 
 	      var _this6 = this;
 
-	      var segwit = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
 	      var transactionVersion = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : DEFAULT_VERSION;
+	      var timeStamp = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : 0;
 
 	      // Inputs are provided as arrays of [transaction, output_index, redeem script, optional sequence]
 	      // associatedKeysets are provided as arrays of [path]
@@ -1663,6 +1666,8 @@ window.Buffer = buffer.Buffer;
 	      var nullPrevout = Buffer.alloc(0);
 	      var defaultVersion = Buffer.alloc(4);
 	      defaultVersion.writeUInt32LE(transactionVersion, 0);
+	      var defaultTime = Buffer.alloc(4);
+	      defaultTime.writeUInt32LE(timeStamp, 0);
 	      var trustedInputs = [];
 	      var regularOutputs = [];
 	      var signatures = [];
@@ -1673,6 +1678,9 @@ window.Buffer = buffer.Buffer;
 	        version: defaultVersion
 	      };
 
+	      if (timeStamp) {
+	        targetTransaction.timestamp = defaultTime;
+	      }
 	      var getTrustedInputCall = segwit ? this.getTrustedInputBIP143.bind(this) : this.getTrustedInput.bind(this);
 	      var outputScript = Buffer.from(outputScriptHex, "hex");
 
@@ -2644,7 +2652,7 @@ window.Buffer = buffer.Buffer;
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.StatusCodes = exports.DBNotReset = exports.DBWrongPassword = exports.NoDBPathGiven = exports.FirmwareOrAppUpdateRequired = exports.LedgerAPI5xx = exports.LedgerAPI4xx = exports.GenuineCheckFailed = exports.PairingFailed = exports.SyncError = exports.FeeRequired = exports.FeeNotLoaded = exports.CantScanQRCode = exports.ETHAddressNonEIP = exports.WrongDeviceForAccount = exports.WebsocketConnectionFailed = exports.WebsocketConnectionError = exports.DeviceShouldStayInApp = exports.TransportInterfaceNotAvailable = exports.TransportOpenUserCancelled = exports.UserRefusedOnDevice = exports.UserRefusedAllowManager = exports.UserRefusedFirmwareUpdate = exports.UserRefusedAddress = exports.UserRefusedDeviceNameChange = exports.UpdateYourApp = exports.UnexpectedBootloader = exports.TimeoutTagged = exports.PasswordIncorrectError = exports.PasswordsDontMatchError = exports.NotEnoughBalanceBecauseDestinationNotCreated = exports.NotEnoughBalance = exports.NoAddressesFound = exports.NetworkDown = exports.ManagerUninstallBTCDep = exports.ManagerNotEnoughSpaceError = exports.ManagerDeviceLockedError = exports.ManagerAppRelyOnBTCError = exports.ManagerAppAlreadyInstalledError = exports.LedgerAPINotAvailable = exports.LedgerAPIErrorWithMessage = exports.LedgerAPIError = exports.UnknownMCU = exports.LatestMCUInstalledError = exports.InvalidAddressBecauseDestinationIsAlsoSource = exports.InvalidAddress = exports.HardResetFail = exports.FeeEstimationFailed = exports.EthAppPleaseEnableContractData = exports.EnpointConfigError = exports.DisconnectedDeviceDuringOperation = exports.DisconnectedDevice = exports.DeviceSocketNoBulkStatus = exports.DeviceSocketFail = exports.DeviceNameInvalid = exports.DeviceHalted = exports.DeviceInOSUExpected = exports.DeviceOnDashboardExpected = exports.DeviceNotGenuineError = exports.DeviceGenuineSocketEarlyClose = exports.DeviceAppVerifyNotSupported = exports.CurrencyNotSupported = exports.CantOpenDevice = exports.BtcUnmatchedApp = exports.BluetoothRequired = exports.AccountNameRequiredError = exports.addCustomErrorDeserializer = exports.createCustomErrorClass = exports.deserializeError = exports.serializeError = undefined;
+	exports.StatusCodes = exports.DBNotReset = exports.DBWrongPassword = exports.NoDBPathGiven = exports.FirmwareOrAppUpdateRequired = exports.LedgerAPI5xx = exports.LedgerAPI4xx = exports.GenuineCheckFailed = exports.PairingFailed = exports.SyncError = exports.FeeRequired = exports.FeeNotLoaded = exports.CantScanQRCode = exports.ETHAddressNonEIP = exports.WrongDeviceForAccount = exports.WebsocketConnectionFailed = exports.WebsocketConnectionError = exports.DeviceShouldStayInApp = exports.TransportInterfaceNotAvailable = exports.TransportOpenUserCancelled = exports.UserRefusedOnDevice = exports.UserRefusedAllowManager = exports.UserRefusedFirmwareUpdate = exports.UserRefusedAddress = exports.UserRefusedDeviceNameChange = exports.UpdateYourApp = exports.UnexpectedBootloader = exports.TimeoutTagged = exports.PasswordIncorrectError = exports.PasswordsDontMatchError = exports.NotEnoughGas = exports.NotEnoughBalanceBecauseDestinationNotCreated = exports.NotEnoughBalance = exports.NoAddressesFound = exports.NetworkDown = exports.ManagerUninstallBTCDep = exports.ManagerNotEnoughSpaceError = exports.ManagerDeviceLockedError = exports.ManagerAppRelyOnBTCError = exports.ManagerAppAlreadyInstalledError = exports.LedgerAPINotAvailable = exports.LedgerAPIErrorWithMessage = exports.LedgerAPIError = exports.UnknownMCU = exports.LatestMCUInstalledError = exports.InvalidAddressBecauseDestinationIsAlsoSource = exports.InvalidAddress = exports.HardResetFail = exports.FeeEstimationFailed = exports.EthAppPleaseEnableContractData = exports.EnpointConfigError = exports.DisconnectedDeviceDuringOperation = exports.DisconnectedDevice = exports.DeviceSocketNoBulkStatus = exports.DeviceSocketFail = exports.DeviceNameInvalid = exports.DeviceHalted = exports.DeviceInOSUExpected = exports.DeviceOnDashboardExpected = exports.DeviceNotGenuineError = exports.DeviceGenuineSocketEarlyClose = exports.DeviceAppVerifyNotSupported = exports.CurrencyNotSupported = exports.CashAddrNotSupported = exports.CantOpenDevice = exports.BtcUnmatchedApp = exports.BluetoothRequired = exports.AccountNameRequiredError = exports.addCustomErrorDeserializer = exports.createCustomErrorClass = exports.deserializeError = exports.serializeError = undefined;
 	exports.TransportError = TransportError;
 	exports.getAltStatusMessage = getAltStatusMessage;
 	exports.TransportStatusError = TransportStatusError;
@@ -2659,6 +2667,7 @@ window.Buffer = buffer.Buffer;
 	var BluetoothRequired = exports.BluetoothRequired = (0, helpers.createCustomErrorClass)("BluetoothRequired");
 	var BtcUnmatchedApp = exports.BtcUnmatchedApp = (0, helpers.createCustomErrorClass)("BtcUnmatchedApp");
 	var CantOpenDevice = exports.CantOpenDevice = (0, helpers.createCustomErrorClass)("CantOpenDevice");
+	var CashAddrNotSupported = exports.CashAddrNotSupported = (0, helpers.createCustomErrorClass)("CashAddrNotSupported");
 	var CurrencyNotSupported = exports.CurrencyNotSupported = (0, helpers.createCustomErrorClass)("CurrencyNotSupported");
 	var DeviceAppVerifyNotSupported = exports.DeviceAppVerifyNotSupported = (0, helpers.createCustomErrorClass)("DeviceAppVerifyNotSupported");
 	var DeviceGenuineSocketEarlyClose = exports.DeviceGenuineSocketEarlyClose = (0, helpers.createCustomErrorClass)("DeviceGenuineSocketEarlyClose");
@@ -2691,6 +2700,7 @@ window.Buffer = buffer.Buffer;
 	var NoAddressesFound = exports.NoAddressesFound = (0, helpers.createCustomErrorClass)("NoAddressesFound");
 	var NotEnoughBalance = exports.NotEnoughBalance = (0, helpers.createCustomErrorClass)("NotEnoughBalance");
 	var NotEnoughBalanceBecauseDestinationNotCreated = exports.NotEnoughBalanceBecauseDestinationNotCreated = (0, helpers.createCustomErrorClass)("NotEnoughBalanceBecauseDestinationNotCreated");
+	var NotEnoughGas = exports.NotEnoughGas = (0, helpers.createCustomErrorClass)("NotEnoughGas");
 	var PasswordsDontMatchError = exports.PasswordsDontMatchError = (0, helpers.createCustomErrorClass)("PasswordsDontMatch");
 	var PasswordIncorrectError = exports.PasswordIncorrectError = (0, helpers.createCustomErrorClass)("PasswordIncorrect");
 	var TimeoutTagged = exports.TimeoutTagged = (0, helpers.createCustomErrorClass)("TimeoutTagged");
@@ -2848,49 +2858,51 @@ window.Buffer = buffer.Buffer;
 	var lib_28 = lib.TimeoutTagged;
 	var lib_29 = lib.PasswordIncorrectError;
 	var lib_30 = lib.PasswordsDontMatchError;
-	var lib_31 = lib.NotEnoughBalanceBecauseDestinationNotCreated;
-	var lib_32 = lib.NotEnoughBalance;
-	var lib_33 = lib.NoAddressesFound;
-	var lib_34 = lib.NetworkDown;
-	var lib_35 = lib.ManagerUninstallBTCDep;
-	var lib_36 = lib.ManagerNotEnoughSpaceError;
-	var lib_37 = lib.ManagerDeviceLockedError;
-	var lib_38 = lib.ManagerAppRelyOnBTCError;
-	var lib_39 = lib.ManagerAppAlreadyInstalledError;
-	var lib_40 = lib.LedgerAPINotAvailable;
-	var lib_41 = lib.LedgerAPIErrorWithMessage;
-	var lib_42 = lib.LedgerAPIError;
-	var lib_43 = lib.UnknownMCU;
-	var lib_44 = lib.LatestMCUInstalledError;
-	var lib_45 = lib.InvalidAddressBecauseDestinationIsAlsoSource;
-	var lib_46 = lib.InvalidAddress;
-	var lib_47 = lib.HardResetFail;
-	var lib_48 = lib.FeeEstimationFailed;
-	var lib_49 = lib.EthAppPleaseEnableContractData;
-	var lib_50 = lib.EnpointConfigError;
-	var lib_51 = lib.DisconnectedDeviceDuringOperation;
-	var lib_52 = lib.DisconnectedDevice;
-	var lib_53 = lib.DeviceSocketNoBulkStatus;
-	var lib_54 = lib.DeviceSocketFail;
-	var lib_55 = lib.DeviceNameInvalid;
-	var lib_56 = lib.DeviceHalted;
-	var lib_57 = lib.DeviceInOSUExpected;
-	var lib_58 = lib.DeviceOnDashboardExpected;
-	var lib_59 = lib.DeviceNotGenuineError;
-	var lib_60 = lib.DeviceGenuineSocketEarlyClose;
-	var lib_61 = lib.DeviceAppVerifyNotSupported;
-	var lib_62 = lib.CurrencyNotSupported;
-	var lib_63 = lib.CantOpenDevice;
-	var lib_64 = lib.BtcUnmatchedApp;
-	var lib_65 = lib.BluetoothRequired;
-	var lib_66 = lib.AccountNameRequiredError;
-	var lib_67 = lib.addCustomErrorDeserializer;
-	var lib_68 = lib.createCustomErrorClass;
-	var lib_69 = lib.deserializeError;
-	var lib_70 = lib.serializeError;
-	var lib_71 = lib.TransportError;
-	var lib_72 = lib.getAltStatusMessage;
-	var lib_73 = lib.TransportStatusError;
+	var lib_31 = lib.NotEnoughGas;
+	var lib_32 = lib.NotEnoughBalanceBecauseDestinationNotCreated;
+	var lib_33 = lib.NotEnoughBalance;
+	var lib_34 = lib.NoAddressesFound;
+	var lib_35 = lib.NetworkDown;
+	var lib_36 = lib.ManagerUninstallBTCDep;
+	var lib_37 = lib.ManagerNotEnoughSpaceError;
+	var lib_38 = lib.ManagerDeviceLockedError;
+	var lib_39 = lib.ManagerAppRelyOnBTCError;
+	var lib_40 = lib.ManagerAppAlreadyInstalledError;
+	var lib_41 = lib.LedgerAPINotAvailable;
+	var lib_42 = lib.LedgerAPIErrorWithMessage;
+	var lib_43 = lib.LedgerAPIError;
+	var lib_44 = lib.UnknownMCU;
+	var lib_45 = lib.LatestMCUInstalledError;
+	var lib_46 = lib.InvalidAddressBecauseDestinationIsAlsoSource;
+	var lib_47 = lib.InvalidAddress;
+	var lib_48 = lib.HardResetFail;
+	var lib_49 = lib.FeeEstimationFailed;
+	var lib_50 = lib.EthAppPleaseEnableContractData;
+	var lib_51 = lib.EnpointConfigError;
+	var lib_52 = lib.DisconnectedDeviceDuringOperation;
+	var lib_53 = lib.DisconnectedDevice;
+	var lib_54 = lib.DeviceSocketNoBulkStatus;
+	var lib_55 = lib.DeviceSocketFail;
+	var lib_56 = lib.DeviceNameInvalid;
+	var lib_57 = lib.DeviceHalted;
+	var lib_58 = lib.DeviceInOSUExpected;
+	var lib_59 = lib.DeviceOnDashboardExpected;
+	var lib_60 = lib.DeviceNotGenuineError;
+	var lib_61 = lib.DeviceGenuineSocketEarlyClose;
+	var lib_62 = lib.DeviceAppVerifyNotSupported;
+	var lib_63 = lib.CurrencyNotSupported;
+	var lib_64 = lib.CashAddrNotSupported;
+	var lib_65 = lib.CantOpenDevice;
+	var lib_66 = lib.BtcUnmatchedApp;
+	var lib_67 = lib.BluetoothRequired;
+	var lib_68 = lib.AccountNameRequiredError;
+	var lib_69 = lib.addCustomErrorDeserializer;
+	var lib_70 = lib.createCustomErrorClass;
+	var lib_71 = lib.deserializeError;
+	var lib_72 = lib.serializeError;
+	var lib_73 = lib.TransportError;
+	var lib_74 = lib.getAltStatusMessage;
+	var lib_75 = lib.TransportStatusError;
 
 	var Transport_1 = createCommonjsModule(function (module, exports) {
 
