@@ -606,7 +606,7 @@ $(document).ready(function() {
 			const appBtc = new window.Btc(transport);
 			result = await appBtc.getWalletPublicKey(
 				coinjs.ledgerPath,
-				false
+				{verify: false, format: "legacy"}
 				);
 			callback(result);
 		} catch (e) {
@@ -640,7 +640,7 @@ $(document).ready(function() {
 
 			result = await appBtc.getWalletPublicKey(
 				coinjs.ledgerPath,
-				false
+				{verify: false, format: "legacy"}
 				);
 
 			publicKey = result.publicKey;
@@ -683,7 +683,7 @@ $(document).ready(function() {
 
 						if (currenttransaction.ins[0].script.buffer.slice(-1) == coinjs.opcode.OP_CHECKMULTISIG) {
 							// check if public key is part of multisig
-							result = await appBtc.signP2SHTransaction(inputs, paths, outputsBuffer, false, false, false, false, timeStamp);
+							result = await appBtc.signP2SHTransaction(inputs, paths, outputsBuffer, undefined, undefined, undefined, undefined, timeStamp);
 
 							var success=false;
 
@@ -701,7 +701,7 @@ $(document).ready(function() {
 									}
 								}
 						else {
-							result = await appBtc.createPaymentTransactionNew(inputs, paths, undefined, outputsBuffer, undefined, undefined, false, timeStamp);
+							result = await appBtc.createPaymentTransactionNew(inputs, paths, undefined, outputsBuffer, undefined, undefined, undefined, timeStamp);
 							callback(result);
 							}
 						}
