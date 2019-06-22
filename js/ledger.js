@@ -1665,8 +1665,9 @@ window.Buffer = buffer.Buffer;
 	      var nullScript = Buffer.alloc(0);
 	      var nullPrevout = Buffer.alloc(0);
 	      var defaultVersion = Buffer.alloc(4);
-	      var defaultTime = Buffer.alloc(4);
 	      defaultVersion.writeUInt32LE(transactionVersion, 0);
+	      var defaultTime = Buffer.alloc(4);
+	      defaultTime.writeUInt32LE(timeStamp, 0);
 	      var trustedInputs = [];
 	      var regularOutputs = [];
 	      var signatures = [];
@@ -1678,7 +1679,7 @@ window.Buffer = buffer.Buffer;
 	      };
 
 	      if (timeStamp) {
-	        targetTransaction.timestamp = timeStamp;
+	        targetTransaction.timestamp = defaultTime;
 	      }
 	      var getTrustedInputCall = segwit ? this.getTrustedInputBIP143.bind(this) : this.getTrustedInput.bind(this);
 	      var outputScript = Buffer.from(outputScriptHex, "hex");
