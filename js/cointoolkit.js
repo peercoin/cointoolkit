@@ -644,6 +644,8 @@ $(document).ready(function() {
 				);
 
 			publicKey = result.publicKey;
+			path = coinjs.ledgerPath;
+
 			console.log("path",path,"address",result.bitcoinAddress,"pubkey",result.publicKey);
 			var txn = appBtc.splitTransaction(currenttransaction.serialize(),false,isPeercoin);
 			var outputsBuffer = Crypto.util.bytesToHex(appBtc.serializeTransactionOutputs(txn));
