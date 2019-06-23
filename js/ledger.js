@@ -1678,7 +1678,7 @@ window.Buffer = buffer.Buffer;
 	        version: defaultVersion
 	      };
 
-	      if (timeStamp) {
+	      if (timeStamp > 0) {
 	        targetTransaction.timestamp = defaultTime;
 	      }
 	      var getTrustedInputCall = segwit ? this.getTrustedInputBIP143.bind(this) : this.getTrustedInput.bind(this);
@@ -1739,7 +1739,7 @@ window.Buffer = buffer.Buffer;
 	            });
 	          }).then(function () {
 	            return _this6.signTransaction(associatedKeysets[i], lockTime, sigHashType).then(function (signature) {
-	              signatures.push(segwit ? signature.toString("hex") : signature.slice(0, signature.length - 1).toString("hex"));
+	              signatures.push(signature.toString("hex"));
 	              targetTransaction.inputs[i].script = nullScript;
 	              if (firstRun) {
 	                firstRun = false;
