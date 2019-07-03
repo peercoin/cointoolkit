@@ -1654,7 +1654,7 @@
 		}
 		
 		/* sign a multisig input */
-		r.signmultisig = function(index, wif, sigHashType){
+		r.signmultisig = function(index, wif, sigHashType, readySignature){
 
 			function scriptListPubkey(redeemScript){
 				var r = {};
@@ -1685,7 +1685,7 @@
 
 			var shType = sigHashType || 1;
 			var sighash = Crypto.util.hexToBytes(this.transactionHash(index, shType));
-			var signature = Crypto.util.hexToBytes(this.transactionSig(index, wif, shType));
+			var signature = (readySignature) ? readySignature : Crypto.util.hexToBytes(this.transactionSig(index, wif, shType));
 
 			sigsList[coinjs.countObject(sigsList)+1] = signature;
 
@@ -1944,7 +1944,7 @@
 				} else if (d['type'] == 'hodl' && d['signed'] == "false") {
 					this.signhodl(i, wif, shType);
 				} else if (d['type'] == 'multisig') {
-					this.signmultisig(i, wif, shType);
+					this.signmultisig(i, wif, shType, undefined);
 				} else if (d['type'] == 'segwit') {
 					this.signsegwit(i, wif, shType);
 				} else {

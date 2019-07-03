@@ -753,7 +753,7 @@ $(document).ready(function() {
 
 							console.log("signature result",result);
 							$.each(result, function(idx,itm) {
-								if (currenttransaction.addsignaturemultisig(idx,itm)) {
+								if (currenttransaction.signmultisig(idx,undefined,itm.slice(-1)[0]*1,itm)) {
 									success=true;
 									}
 								});
