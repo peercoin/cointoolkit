@@ -754,7 +754,7 @@ $(document).ready(function() {
 							console.log("signature result",result);
 							$.each(result, function(idx,itm) {
 								var signature = Crypto.util.hexToBytes(itm);
-								if (currenttransaction.signmultisig(idx,undefined,signature(-1)[0]*1,signature)) {
+								if (currenttransaction.signmultisig(idx,undefined,signature.slice(-1)[0]*1,signature)) {
 									success=true;
 									}
 								});
