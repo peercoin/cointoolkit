@@ -5,7 +5,7 @@
 		<title>Cointoolkit</title>
 
 		<meta http-equiv="content-type" content="text/html;charset=utf-8" />
-		<meta name="keywords" content="bitcoin, wallet, multisig, multisignature, address, browser, javascript, js, broadcast, transaction, verify, decode" />
+		<meta name="keywords" content="bitcoin, wallet, multisig, multisignature, address, browser, segwit, javascript, js, broadcast, transaction, verify, decode" />
 		<meta name="description" content="A cryptoasset toolkit written in Javascript. Supports Multisig, Custom Transactions, nLockTime and more!" />
 
 		<meta name="referrer" content="no-referrer" />
@@ -14,11 +14,14 @@
 
 		<link rel="stylesheet" href="css/jquery-ui-sort-only.min.css" media="screen">
 		<link rel="stylesheet" href="css/bootstrap.min.css" media="screen">
+		<link rel="stylesheet" href="css/bootstrap-datetimepicker.min.css">
 		<link rel="stylesheet" href="css/style.css" media="screen">
 		
 		<script type="text/javascript" src="js/jquery-1.9.1.min.js"></script>
 		<script type="text/javascript" src="js/jquery-ui-sort-only.min.js"></script>
 		<script type="text/javascript" src="js/bootstrap.min.js"></script>
+		<script type="text/javascript" src="js/moment.min.js"></script>
+		<script type="text/javascript" src="js/bootstrap-datetimepicker.min.js"></script>
 
 		<script type="text/javascript" src="js/crypto-min.js"></script>
 		<script type="text/javascript" src="js/crypto-sha256.js"></script>
@@ -60,14 +63,13 @@
 							<li class="dropdown">
 								<a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-plus"></span> New<b class="caret"></b></a>
 								<ul class="dropdown-menu">
-									<li><a href="#newTransaction" data-toggle="tab">Transaction</a></li>
-                                    <li><a href="#newPeerAsset" data-toggle="tab">PeerAsset</a></li>
-									<li class="divider"></li>
-									<li><a href="#newAddress" data-toggle="tab">New Address</a></li>
+									<li><a href="#newAddress" data-toggle="tab">Address</a></li>
+									<li><a href="#newSegWit" data-toggle="tab">SegWit Address</a></li>
 									<li><a href="#newMultiSig" data-toggle="tab">MultiSig Address</a></li>
+									<li><a href="#newTimeLocked" data-toggle="tab">Time Locked Address</a></li>
 									<li><a href="#newHDaddress" data-toggle="tab">HD Address</a></li>
 									<li class="divider"></li>
-									<li><a href="#newQrCode" data-toggle="tab">QR Code</a></li>
+									<li><a href="#newTransaction" data-toggle="tab">Transaction</a></li>
 								</ul>
 							</li>
 							<li><a href="#verify" data-toggle="tab"><span class="glyphicon glyphicon-ok"></span> Verify</a></li>
@@ -136,7 +138,7 @@
 
 							<div class="col-md-4">
 								<h3><span class="glyphicon glyphicon-globe"></span> Addresses</h3>
-								<p>We support <a href="#newAddress">regular addresses</a> but also <a href="#newMultiSig">multisig</a> and stealth, and access to your own private keys!</p>
+								<p>We support <a href="#newAddress">regular addresses</a>, <a href="#newMultiSig">multisig</a>, <a href="#newSegWit">segwit / bech32</a> and stealth all with access to your own private keys!</p>
 							</div>
 
 							<div class="col-md-4">
@@ -163,6 +165,19 @@
 										<input id="openPass" type="password" class="form-control" placeholder="Password" required>
 										<input id="openPassConfirm" type="password" class="form-control" placeholder="Password confirm" required>
 										<br>
+
+										<div>
+											<a href="javascript:;" class="optionsCollapse"><div class="well well-sm"><span class="glyphicon glyphicon-collapse-down" id="glyphcollapse"></span> Advanced Options</div></a>
+											<div class="hidden optionsAdvanced">
+												<label>Segregated Witness Address</label>
+												<p class="checkbox">
+													<label><input type="checkbox" id="walletSegwit" class="checkbox-inline" checked> Use a segwit address instead of a regular address. <span class="text-muted"><i>(recommended)</i></span></label></label> <br>
+													<label><input type="radio" id="walletSegwitp2sh" class="walletSegwitType" name="walletSegWitType" value="p2sh" checked> p2sh address</label> <br>
+													<label><input type="radio" id="walletSegwitBech32" class="walletSegwitType" name="walletSegWitType" value="bech32"> bech32 address</label>
+												</p>
+											</div>
+										</div>
+
 										<div id="openLoginStatus" class="alert alert-danger hidden"></div>
 										<button id="openBtn" class="btn btn-primary" type="submit">Load wallet</button>
 									</form>
@@ -177,7 +192,16 @@
 											<div id="walletQrCode"></div> <br>
 											<div>
 												<span id="walletLoader" class="hidden"><img src="images/loader.gif"></span>
-												<span id="walletAddress"></span>
+												<span id="walletAddress"></span> 
+
+												<div class="btn-group">
+													<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" id="walletToBtn">SegWit <span class="caret"></span></button>
+													<ul class="dropdown-menu">
+														<li><a href="javascript:;" id="walletToSegWit">SegWit</a></li>
+														<li><a href="javascript:;" id="walletToSegWitBech32">SegWit/Bech32</a></li>
+														<li><a href="javascript:;" id="walletToLegacy">Legacy</a></li>
+													</ul>
+												</div>
 											</div>
 											<br>
 											<div style="text-align:center; width:350px;">
@@ -193,6 +217,12 @@
 												<div id="walletKeys" class="hidden">
 													<label>Public Key</label>
 													<input class="form-control pubkey" type="text" readonly>
+
+													<div class="walletSegWitRS hidden">
+														<label>Redeem Script <i>(SegWit)</i></label>
+														<input class="form-control" type="text" readonly>
+													</div>
+
 													<label>Private key</label>
 													<div class="input-group">
 														<input class="form-control privkey" type="password" readonly>
@@ -201,6 +231,7 @@
 															<button class="showKey btn btn-default" type="button">Show</button>
 														</span>
 													</div>
+
 													<label>Private Key (AES256 encrypted key)</label>
 													<input class="form-control privkeyaes" type="text" readonly>
 												</div>
@@ -256,7 +287,7 @@
 							</div>
 						</div>
 					</div>
-					
+
 					<div class="tab-pane tab-content" id="newQrCode">
 						<h2>QR Code Generator<small> transfer data easily between devices</small></h2>
 						<p>You can store anything from an address to a entire transaction or a private key</p>
@@ -300,7 +331,7 @@
 							<label>AES-256 Encrypted WIF key</label>
 							<input id="newPrivKeyEnc" type="text" class="form-control" value="" readonly>
 						</div>
-						
+
 						<label>Private key (hex)</label>
 						<div class="input-group">
 							<input id="newPrivKey" type="password" class="form-control" value="" readonly>
@@ -342,7 +373,71 @@
 
 						</div>
 
+						<div class="btn-group">
+							<input type="button" class="btn btn-primary" value="Generate" id="newKeysBtn">
+							<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+								<span class="caret"></span>
+								<span class="sr-only">Toggle Dropdown</span>
+							</button>
+							<ul class="dropdown-menu">
+								<li><a href="#" id="newPaperwalletBtn">Print</a></li>
+							</ul>							
+						</div>
+						<br>
+					</div>
 
+					<div class="tab-pane tab-content" id="newSegWit">
+						<h2>New SegWit Address <small> Smaller &amp; Faster Transactions</small></h2>
+
+						<p>Any keys used you will need to manually store safely as they will be needed later to redeem the bitcoins.</p>
+
+						<label>SegWit Address (Share)</label>
+
+						<div class="input-group">
+							<input id="newSegWitAddress" type="text" class="form-control address" value="" readonly>
+							<span class="input-group-btn">
+								<button class="qrcodeBtn btn btn-default" type="button" data-toggle="modal" data-target="#modalQrcode"><span class="glyphicon glyphicon-qrcode"></span></button>
+							</span>
+						</div>
+
+						<label>RedeemScript</label>
+						<input id="newSegWitRedeemScript" type="text" class="form-control" readonly>
+
+						<label>Public key</label>
+						<input id="newSegWitPubKey" type="text" class="form-control" readonly>
+
+						<label>Private key (WIF key)</label>
+						<div class="input-group">
+							<input id="newSegWitPrivKey" type="password" class="form-control" value="" readonly>
+							<span class="input-group-btn">
+								<button class="showKey btn btn-default" type="button">Show</button>
+							</span>
+						</div>
+
+
+						<h3>Address Options</h3>
+						<p>You can use the advanced options below to generate different kind of keys and addresses.</p>
+
+						<div class="checkbox">
+							<label><input type="checkbox" id="newSegWitBech32addr" class="checkbox-inline" checked> Enable <a href="https://en.bitcoin.it/wiki/Bech32" target="_blank">Bech32</a>?</label>
+						</div>
+
+						<div class="checkbox">
+							<label><input type="checkbox" id="newSegWitBrainwallet" class="checkbox-inline"> Custom Seed or Brain Wallet</label>
+							<input type="text" class="form-control hidden" id="brainwalletSegWit">
+						</div>
+
+						<div class="btn-group">
+							<input type="button" class="btn btn-primary" value="Generate" id="newSegWitKeysBtn">
+							<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+								<span class="caret"></span>
+								<span class="sr-only">Toggle Dropdown</span>
+							</button>
+
+							<ul class="dropdown-menu">
+								<li><a href="#" id="newSegwitPaperwalletBtn">Print</a></li>
+							</ul>
+						</div>
 						<input type="button" class="btn btn-primary" value="Generate" id="newKeysBtn">
 						<input type="button" class="btn btn-primary" value="FromLedger" id="ledgerKeysBtn">
 						<br>
@@ -453,6 +548,83 @@
 						<br>
 					</div>
 
+                    <div class="tab-pane tab-content" id="newTimeLocked">
+                        <h2>New Time Locked Address <small>Coins can be released only after a certain date</small></h2>
+
+                        <div class="row">
+
+                            <div class="col-md-11">
+				<p>Use <i><a href="https://github.com/bitcoin/bips/blob/master/bip-0065.mediawiki" target="_blank">OP_CHECKLOCKTIMEVERIFY</a></i> (OP_HODL) to create a time locked address where the funds are unspendable until a set date and time has passed.</p>
+                                <p>Public keys can be <a href="#newAddress">generated in your browser</a> or from your bitcoin client</a>.</p>
+                                <p>Enter the public key that will be able to unlock the funds after the a certain date.
+                            </div>
+
+                            <div class="col-md-1">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="form-horizontal">
+                                <div class="col-xs-12">
+                                    <input id="timeLockedPubKey" type="text" class="form-control pubkey">
+                                </div>
+                            </div>
+                        </div>
+
+                        <p id="timeLockedRbTypeBox">
+                        	Enter the 
+                        		<input type="radio" id="timeLockedRbTypeDate" name="timeLockedRbType" value="date" checked="checked"> 
+                        		<label for="timeLockedRbTypeDate">date and time</label> 
+                        		or                         		
+                        		<input type="radio" id="timeLockedRbTypeBlockHeight" name="timeLockedRbType" value="blockheight">
+                        		<label for="timeLockedRbTypeBlockHeight">blockheight</label>
+
+                        		required to release the coins: 
+                        </p>
+                        <div class="row">
+                            <div class='col-md-6'>
+                                <div class="form-group">
+                                    <div class='input-group date' id='timeLockedDateTimePicker'>
+                                        <input type='text' class="form-control" placeholder="MM/DD/YYYY hh:mm" />
+                                        <span class="input-group-addon">
+                                            <span class="glyphicon glyphicon-calendar"></span>
+                                        </span>
+                                    </div>
+                                    <div class='input-group hidden' id='timeLockedBlockHeight'>
+                                        <input type='text' id='timeLockedBlockHeightVal' class="form-control" placeholder="Blockheight" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <br>
+
+                        <div id="timeLockedErrorMsg" class="alert alert-danger" style="display:none;"></div>
+
+                        <div class="alert alert-success hidden" id="timeLockedData">
+                            <label>Address</label>
+                            <p>Payment should be made to this address:</p>
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control address" value="" readonly>
+                                        <span class="input-group-btn">
+                                            <button class="qrcodeBtn btn btn-default" type="button" data-toggle="modal" data-target="#modalQrcode"><span class="glyphicon glyphicon-qrcode"></span></button>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <label>Redeem Script</label>
+                            <p>This script should be <i>saved and should be shared with all the participants before a payment is made</i>, so they may validate the authenticity of the address, it will also be used later to release the bitcoins.</p>
+                            <textarea class="form-control script" style="height:160px" readonly></textarea>
+                            <label>Shareable URL</label>
+                            <input type="text" class="scriptUrl form-control" readonly>
+                        </div>
+
+                        <input type="button" class="btn btn-primary" value="Submit" id="newTimeLockedAddress">
+						<br>
+					</div>
+
 					<div class="tab-pane tab-content" id="newHDaddress">
 						<h2>New HD Address <small>making bip32 even easier</small></h2>
 						<p>Use the form below to generate a <i>master</i> hierarchical deterministic address.</p>
@@ -533,7 +705,7 @@
 								<input type="text" class="form-control" value="0" id="nLockTime">
 
 								<hr>
-								
+
 								<div id="txTimeOptional">
 									<label>Extra time field</label>
 									<p>Indicates the timestamp of a transaction.</p>
@@ -820,52 +992,8 @@
 										</div>
 									</div>
 								</div>
-
 							</div>
 						</div>
-
-						<br>
-
-						<div class="row">
-							<div class="col-xs-3">
-								<label><abbr title="What is not spent will be used as a transaction fee">Transaction Fee</abbr></label>
-								<input type="text" id="transactionFee" class="form-control" value="0.0000" readonly>
-							</div>
-						</div>
-
-						<br>
-
-						<div id="transactionCreateStatus" class="alert alert-danger hidden"></div>
-
-						<div id="transactionCreate" class="alert alert-success hidden">
-							<label>Transaction</label>
-							<button class="qrcodeBtn btn btn-default" type="button" data-toggle="modal" data-target="#modalQrcode" style="float:right;"><span class="glyphicon glyphicon-qrcode"></span></button>
-
-							<p>The transaction below has been generated and encoded. It can be broadcasted once it has been signed.</p>
-							<br>
-							<textarea class="form-control" style="height:150px" readonly></textarea>
-							<div class="row">
-								<div class="col-md-12">
-									<p class="text-muted" style="float:left;">Size: <span class="txSize">0</span> <i>bytes</i></p>
-									<div style="float:right;margin-top: 10px;">
-										If you are sure:
-										<button class="btn btn-info transactionToVerify" type="button">
-											Continue to Verify
-											<span class="glyphicon glyphicon-pencil"></span>
-										</button>
-                                        Or
-										<button class="btn btn-info transactionToSign" type="button">
-											Continue to Sign
-											<span class="glyphicon glyphicon-pencil"></span>
-										</button>
-									</div>
-								</div>
-							</div>
-						</div>
-
-						<input type="button" value="Generate" class="btn btn-primary" id="transactionBtn">
-
-						<br>
 					</div>
 
 					<div class="tab-pane tab-content" id="verify">
@@ -879,46 +1007,82 @@
 						<br>
 
 						<div class="hidden verifyData" id="verifyRsData">
+
 							<h4>Redeem Script</h4>
-							<p>The above redeem script has been decoded</p>
-							<div class="row">
-								<div class="col-lg-4">
+							<p><span style="float:right"><a href="javascript:;" target="_blank" class="verifyLink" title="Link to this page"><span class="glyphicon glyphicon-link"></span></a></span>The above redeem script has been decoded</p>
+
+							<div class="hidden" id="verifyRsDataMultisig">
 								<label>Multi Signature Address</label>
-									<div class="input-group">
-			
-										<input type="text" class="form-control address multisigAddress" value="" readonly>
-										<span class="input-group-btn">
-											<button class="qrcodeBtn btn btn-default" type="button" data-toggle="modal" data-target="#modalQrcode"><span class="glyphicon glyphicon-qrcode"></span></button>
-										</span>
+								<div class="row">
+    									<div class="col-lg-6">
+    										<div class="input-group">
+    											<input type="text" class="form-control address multisigAddress" value="" readonly>
+    											<span class="input-group-btn">
+    												<button class="qrcodeBtn btn btn-default" type="button" data-toggle="modal" data-target="#modalQrcode"><span class="glyphicon glyphicon-qrcode"></span></button>
+    											</span>
+    										</div>
+    									</div>
+    								</div>
+
+								<label>Required Signatures</label>
+		    						<p class="signaturesRequired">?</p>
+    								<label>Signatures Required from</label>
+    								<table class="table table-striped table-hover">
+    									<tbody>
+    									</tbody>
+    								</table>
+								<br>
+							</div>
+
+							<div class="hidden verifyData" id="verifyRsDataSegWit">
+				                               	<label>Segwit Address</label>
+   								<div class="row">
+   									<div class="col-lg-6">
+    										<div class="input-group">
+    											<input type="text" class="form-control address segWitAddress" value="" readonly>
+    											<span class="input-group-btn">
+    												<button class="qrcodeBtn btn btn-default" type="button" data-toggle="modal" data-target="#modalQrcode"><span class="glyphicon glyphicon-qrcode"></span></button>
+    											</span>
+    										</div>
 									</div>
 								</div>
-								<div class="col-lg-4">
-									<label>Script hash</label>
-									<div class="">
-										<input type="text" class="form-control address multisigScriptHash" value="" readonly>
+								<br>
+							</div>
+
+							<div class="hidden verifyData" id="verifyRsDataHodl">
+								<label>Hodl Address</label>
+								<div class="row">
+									<div class="col-md-12">
+										<div class="input-group">
+											<input type="text" class="form-control address" value="" readonly>
+											<span class="input-group-btn">
+												<button class="qrcodeBtn btn btn-default" type="button" data-toggle="modal" data-target="#modalQrcode"><span class="glyphicon glyphicon-qrcode"></span></button>
+											</span>
+										</div>
 									</div>
 								</div>
-								<div class="col-lg-4">
-									<label>Identity <span class="text-muted">(if <a href="known-pubkeys.js" target="_blank">known</a>)</span></label>
-									<div class="">
-										<input type="text" class="form-control address multisigScriptHashKnown" value="" readonly>
+
+								<label>Required Signature</label>
+								<div class="row">
+									<div class="col-md-12">
+										<div class="input-group">
+											<input type="text" class="form-control address pubkey" value="" readonly>
+											<span class="input-group-btn">
+												<button class="qrcodeBtn btn btn-default" type="button" data-toggle="modal" data-target="#modalQrcode"><span class="glyphicon glyphicon-qrcode"></span></button>
+											</span>
+										</div>
+									</div>
+								</div>
+
+								<label>Unlock Time</label>
+								<div class="row">
+									<div class='col-md-4'>
+										<div class="input-group">
+											<input type="text" class="form-control date" value="" readonly>
+										</div>
 									</div>
 								</div>
 							</div>
-							<label>Required Signatures</label>
-							<p class="signaturesRequired">?</p>
-							<label>Signatures Required from</label>
-							<table class="table table-striped table-hover">
-							<thead>
-								<tr>
-									<th class="col-md-3">Address</th>
-									<th class="col-md-5">Pubkey</th>
-									<th class="col-md-4">Identity <span class="text-muted">(if <a href="known-pubkeys.js" target="_blank">known</a>)</span></th>
-								</tr>
-							</thead>
-								<tbody>
-								</tbody>
-							</table>
 							<div>
 								<small>Shareable verification link</small>
 								<input type="text" class="form-control verifyLink" readonly>
@@ -927,26 +1091,22 @@
 						</div>
 
 						<div class="hidden verifyData" id="verifyTransactionData">
-							<div class="row">
-								<div class="col-xs-12">
-									<h4>Transaction Script</h4>
-									<p>The above script has been decoded</p>
-									<div><b>Version</b>: <span class="transactionVersion"></span></div>
-									<div class="txtime"><b>Transaction Time</b>: <span class="transactionTime"></span></div>
-									<div><b>Transaction Size</b>: <span class="transactionSize"></span></div>
-									<div><b>Lock time</b>: <span class="transactionLockTime"></span></div>
-									<div class="txunit"><b>Unit</b>: <span class="transactionUnit"></span></div>
-								</div>
-							</div>
+							<h4>Transaction Script</h4>
+							<p><span style="float:right"><a href="" target="_blank" class="verifyLink" title="Link to this page"><span class="glyphicon glyphicon-link"></span></a></span>The above script has been decoded</p>
+							<div><b>Version</b>: <span class="transactionVersion"></span></div>
+							<div class="txtime"><b>Transaction Time</b>: <span class="transactionTime"></span></div>
+							<div><b>Transaction Size</b>: <span class="transactionSize"></span></div>
+							<div><b>Lock time</b>: <span class="transactionLockTime"></span></div>
+							<div class="txunit"><b>Unit</b>: <span class="transactionUnit"></span></div>
+							<div class="transactionSegWit"><b>SegWit</b>: True</div>
+							<div class="transactionRBF"><b>RBF</b>: This is a <a href="https://en.bitcoin.it/wiki/Transaction_replacement">replace by fee</a> transaction!</div>
 
 							<hr>
-							
-							<div class="row">
-								<div class="col-xs-12">
-									<label>Inputs</label>
-									<table class="table table-striped table-hover ins">
-										<thead>
-											<tr style="font-weight:bold;">
+
+							<label>Inputs</label>
+							<table class="table table-striped table-hover ins">
+								<thead>
+									<tr style="font-weight:bold;">
 												<td>
 													<abbr title="the transaction id">Txid</abbr>
 												</td>
@@ -970,8 +1130,6 @@
 										<tbody>
 										</tbody>
 									</table>
-								</div>
-							</div>
 
 							<label>Outputs</label>
 							<table class="table table-striped table-hover outs">
@@ -993,11 +1151,6 @@
 										If the transaction is correct:
 										<button class="btn btn-info verifyToSign" type="button">
 											Continue to Sign
-											<span class="glyphicon glyphicon-pencil"></span>
-										</button>
-                                    Or
-									    <button class="btn btn-info verifyToLedgerSign" type="button">
-											Sign with Ledger
 											<span class="glyphicon glyphicon-pencil"></span>
 										</button>
 									Or
@@ -1028,18 +1181,39 @@
 
 						<div class="hidden verifyData" id="verifyPubKey">
 							<h4>Public key</h4>
-							<p>The above public key has been encoded to its address</p>
-							<p><b>Address</b>: <input type="text" class="form-control address" readonly></p>
-							<div>
-								<small>Shareable verification link</small>
-								<input type="text" class="form-control verifyLink" readonly>
+							<p><span style="float:right"><a href="" target="_blank" class="verifyLink" title="Link to this page"><span class="glyphicon glyphicon-link"></span></a></span>The above public key has been encoded to its address</p>
+							<p><b>Legacy Address</b>: <input type="text" class="form-control address" readonly></p>
+
+							<div class="hidden verifyDataSw">
+								<hr>
+								<div class="row">
+									<div class="col-md-6">
+										<p><b>P2SH Segwit Address</b>: <input type="text" class="form-control addressSegWit" readonly></p>
+									</div>
+
+									<div class="col-md-6">
+										<p><b>P2SH Segwit Redeem Script</b>: <input type="text" class="form-control addressSegWitRedeemScript" readonly></p>
+									</div>
+								</div>
+
+								<hr>
+								<div class="row">
+									<div class="col-md-6">
+										<p><b>Bech32 Address</b>: <input type="text" class="form-control addressBech32" readonly></p>
+									</div>
+
+									<div class="col-md-6">
+										<p><b>Bech32 Redeem Script</b>: <input type="text" class="form-control addressBech32RedeemScript" readonly></p>
+									</div>
+								</div>
+
+								<br>
 							</div>
-							</br>
 						</div>
 
 						<div class="hidden verifyData" id="verifyHDaddress">
 							<h4>HD Address</h4>
-							<p>The key <small><span class="hdKey hidden"></span></small> has been decoded</p>
+							<p><span style="float:right"><a href="" target="_blank" class="verifyLink" title="Link to this page"><span class="glyphicon glyphicon-link"></span></a></span>The key <small><span class="hdKey hidden"></span></small> has been decoded</p>
 							<div class="row">
 								<div class="col-md-2">
 									<b>Type</b><br>
@@ -1137,6 +1311,7 @@
 					<div class="tab-pane tab-content" id="sign">
 						<h2>Sign Transaction <small>once a transaction has been verified</small></h2>
 						<p>Once you have <a href="#verify">verified</a> a transaction you can sign and then <a href="#broadcast">broadcast</a> it into the network.</p>
+
 						<div class="row">
 							<div class="col-md-12">
 								<label for="signPrivateKey">Private key</label>
@@ -1157,6 +1332,33 @@
 							</div>
 						</div>
 						<br>
+
+						<a href="javascript:;" id="signAdvancedCollapse">
+							<div class="well well-sm"><span class="glyphicon glyphicon-collapse-down"></span> Advanced Options</div>
+						</a>
+
+						<div id="signAdvanced" class="hidden">
+							<div class="row">
+								<div class="col-md-12">
+									<label for="sighashType">Sig Hash Type</label>
+
+									<select id="sighashType" class="form-control">
+										<option value="1" rel="SIGHASH_ALL: Signs all the inputs and outputs, protecting everything against modification.">ALL (default)</option>
+										<option value="2" rel="SIGHASH_NONE: Signs all of the inputs but none of the outputs, allowing anyone to change where the satoshis are going unless other signatures using other signature hash flags protect the outputs.">NONE</option>
+										<option value="3" rel="SIGHASH_SINGLE: The only output signed is the one corresponding to this input, ensuring nobody can change your part of the transaction but allowing other signers to change their part of the transaction.">SINGLE</option>
+										<option value="129" rel="SIGHASH_ALL|SIGHASH_ANYONECANPAY: Signs all of the outputs but only this one input, it allows anyone to add or remove other inputs, so anyone can contribute additional satoshis but they cannot change how many satoshis are sent nor where they go.">ALL|ANYONECANPAY</option>
+										<option value="130" rel="SIGHASH_NONE|SIGHASH_ANYONECANPAY: Signs only this one input and allows anyone to add or remove other inputs or outputs, so anyone who gets a copy of this input can spend it however they'd like.">NONE|ANYONECANPAY</option>
+										<option value="131" rel="SIGHASH_SINGLE|SIGHASH_ANYONECANPAY: Signs this one input and its corresponding output. Allows anyone to add or remove other inputs.">SINGLE|ANYONECANPAY</option>
+									</select>
+								</div>
+							</div>
+
+							<br>
+
+							<div class="alert alert-info" id="sighashTypeInfo">
+								SIGHASH_ALL: The default, signs all the inputs and outputs, protecting everything except the signature scripts against modification.
+							</div>
+						</div>
 
 						<div class="alert alert-danger hidden" id="signedDataError">
 							<span class="glyphicon glyphicon-exclamation-sign"></span> There is a problem with one or more of your inputs, please check and try again
@@ -1189,6 +1391,8 @@
 						</div>
 
 						<input type="button" value="Sign" class="btn btn-primary" id="signBtn">
+						Or
+						<input type="button" value="Sign with Ledger" class="btn btn-primary" id="signLedgerBtn">
 						<br>
 					</div>
 
