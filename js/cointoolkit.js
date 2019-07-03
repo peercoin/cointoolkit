@@ -707,8 +707,8 @@ $(document).ready(function() {
 				{verify: false, format: "legacy"}
 				);
 
-			publicKey = result.publicKey;
-			path = coinjs.ledgerPath;
+			var publicKey = result.publicKey;
+			var path = coinjs.ledgerPath;
 
 			console.log("path",path,"address",result.bitcoinAddress,"pubkey",result.publicKey);
 			var txn = appBtc.splitTransaction(currenttransaction.serialize(),false,isPeercoin);
@@ -720,7 +720,7 @@ $(document).ready(function() {
 			// TODO: check if gettransaction is available
 
 			// extract script part
-			script = Crypto.util.bytesToHex(currenttransaction.ins[0].script.buffer);
+			var script = Crypto.util.bytesToHex(currenttransaction.ins[0].script.buffer);
 
 			if (currenttransaction.ins[0].script.buffer.slice(-1) == coinjs.opcode.OP_CHECKMULTISIG && currenttransaction.ins[0].script.chunks.slice(-1)[0] != coinjs.opcode.OP_CHECKMULTISIG) {
 				script = Crypto.util.bytesToHex(currenttransaction.ins[0].script.chunks.slice(-1)[0]);
@@ -744,7 +744,7 @@ $(document).ready(function() {
 
 						inputs.sort((a, b) => (a[0] > b[0]) ? 1 : -1);
 						inputs.map(item=> {item.splice(0,1)});
-
+						var result=false;
 						if (currenttransaction.ins[0].script.buffer.slice(-1) == coinjs.opcode.OP_CHECKMULTISIG) {
 							// check if public key is part of multisig
 							result = await appBtc.signP2SHTransaction(inputs, paths, outputsBuffer, undefined, hashType, undefined, undefined, timeStamp);
@@ -753,7 +753,8 @@ $(document).ready(function() {
 
 							console.log("signature result",result);
 							$.each(result, function(idx,itm) {
-								if (currenttransaction.signmultisig(idx,undefined,itm.slice(-1)[0]*1,itm)) {
+								var signature = Crypto.util.hexToBytes(itm);
+								if (currenttransaction.signmultisig(idx,undefined,signature(-1)[0]*1,signature)) {
 									success=true;
 									}
 								});
@@ -2928,7 +2929,7 @@ var bcBasedExplorer = {
 				getLedgerSignatures(t, $("#sighashType option:selected").val(), function(result) {
 					if (result) {
 						$("#signedData textarea").val(result);
-						$("#signedData .txSize").html(result.size());
+						$("#signedData .txSize").html(result.length/2);
 						$("#signedData").removeClass('hidden').fadeIn();
 						}
 					});
