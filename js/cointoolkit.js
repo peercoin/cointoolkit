@@ -2935,7 +2935,7 @@ var bcBasedExplorer = {
 					});
 
 				$("#signedData .signedToVerify").on( "click", function() {
-					$("#verifyScript").val(signed).fadeOut().fadeIn();
+					$("#verifyScript").val($("#signedData textarea").val()).fadeOut().fadeIn();
 					$("#verifyBtn").click();
 					window.location.hash = "#verify";
 				});
