@@ -216,11 +216,9 @@ $(document).ready(function() {
 					}
 					
 					var address = coinjs.pubkey2address(pubkey);
-					$('<tr><td width="30%"><input type="text" class="form-control" value="'+address+'" readonly></td><td><input type="text" class="form-control" value="'+pubkey+'" readonly></td></tr>').appendTo("#verifyRsDataMultisig table tbody");
-//todo				$('<tr><td width="30%"><input type="text" class="form-control" value="'+address+'" readonly></td><td><input type="text" class="form-control" value="'+pubkey+'" readonly></td><td><input type="text" class="form-control" value="'+identity+'" readonly></td></tr>').appendTo("#verifyRsData table tbody");
+					$('<tr><td width="30%"><input type="text" class="form-control" value="'+address+'" readonly></td><td><input type="text" class="form-control" value="'+pubkey+'" readonly></td><td><input type="text" class="form-control" value="'+identity+'" readonly></td></tr>').appendTo("#verifyRsDataMultisig table tbody");
 				}
 				$("#verifyRsData").removeClass("hidden");
-//todo link
 				$("#verify .verifyLink").val(document.location.origin+''+document.location.pathname+'?mode='+$("#coinSelector").val()+'&verify='+$("#verifyScript").val());
 				history.pushState({}, null, $("#verify .verifyLink").val());
 				$("#verifyRsDataMultisig").removeClass('hidden');
@@ -264,7 +262,7 @@ $(document).ready(function() {
 				window.location.hash = "#sign";
 			});
 			$("#verifyTransactionData .verifyToLedgerSign").off().on( "click", function() {
-				getLedgerSignatures(decode, function(result) {
+				getLedgerSignatures(decode, 1, function(result) {
 					if (result) {
 						$("#verifyScript").val(result).fadeOut().fadeIn();
 						window.location.hash = "#verify";
@@ -694,7 +692,7 @@ $(document).ready(function() {
 		}
 	}
 
-	async function getLedgerSignatures(currenttransaction,callback) {
+	async function getLedgerSignatures(currenttransaction, hashType, callback) {
 		try {
 			const transport = await window.TransportWebUSB.create();
 			const appBtc = new window.Btc(transport);
@@ -749,7 +747,7 @@ $(document).ready(function() {
 
 						if (currenttransaction.ins[0].script.buffer.slice(-1) == coinjs.opcode.OP_CHECKMULTISIG) {
 							// check if public key is part of multisig
-							result = await appBtc.signP2SHTransaction(inputs, paths, outputsBuffer, undefined, undefined, undefined, undefined, timeStamp);
+							result = await appBtc.signP2SHTransaction(inputs, paths, outputsBuffer, undefined, hashType, undefined, undefined, timeStamp);
 
 							var success=false;
 
@@ -901,7 +899,7 @@ $(document).ready(function() {
 								var tx = ""+o.tx_hash;
 								if(tx.match(/^[a-f0-9]+$/)){
 									var n = o.tx_ouput_n;
-									var script = (redeem.isMultisig==true) ? $("#redeemFrom").val() : o.script;
+									var script = (redeem.type=="multisig__") ? $("#redeemFrom").val() : o.script;
 									var amount = (o.value /100000000).toFixed(8);;
 									addOutput(tx, n, script, amount);
 								}
@@ -1391,7 +1389,7 @@ var bcBasedExplorer = {
 									var tx = ""+o.tx_hash;
 									if(tx.match(/^[a-f0-9]+$/)){
 										var n = o.tx_output_n;
-										var script = (redeem.isMultisig==true) ? $("#redeemFrom").val() : o.script;
+										var script = (redeem.type == "multisig__") ? $("#redeemFrom").val() : o.script;
 										var amount = (o.value /100000000).toFixed(8);;
 										addOutput(tx, n, script, amount);
 									}
@@ -2880,11 +2878,60 @@ var bcBasedExplorer = {
 				var tx = coinjs.transaction();
 				var t = tx.deserialize(script.val());
 
-				var signed = t.sign(wifkey.val());
-// todo				var signed = t.sign(wifkey.val(), $("#sighashType option:selected").val());
+//				var signed = t.sign(wifkey.val());
+				var signed = t.sign(wifkey.val(), $("#sighashType option:selected").val());
 				$("#signedData textarea").val(signed);
 				$("#signedData .txSize").html(t.size());
 				$("#signedData").removeClass('hidden').fadeIn();
+
+				$("#signedData .signedToVerify").on( "click", function() {
+					$("#verifyScript").val(signed).fadeOut().fadeIn();
+					$("#verifyBtn").click();
+					window.location.hash = "#verify";
+				});
+
+				$("#signedData .signedToBroadcast").on( "click", function() {
+					$("#broadcast #rawTransaction").val(signed).fadeOut().fadeIn();
+					window.location.hash = "#broadcast";
+				});
+			} catch(e) {
+				if (coinjs.debug) {console.log(e.stack)};
+				$("#signedDataError").removeClass('hidden').delay(2000).queue(function(){
+					$(this).addClass("hidden").dequeue();
+				});
+				$("#signedData").addClass('hidden');
+			}
+		} else {
+			$("#signedDataError").removeClass('hidden').delay(2000).queue(function(){
+				$(this).addClass("hidden").dequeue();
+			});
+			$("#signedData").addClass('hidden');
+		}
+	});
+
+
+	$("#signLedgerBtn").click(function(){
+		var script = $("#signTransaction");
+
+		if((script.val()).match(/^[a-f0-9]+$/ig)){
+			$(script).parent().removeClass('has-error');
+		} else {
+			$(script).parent().addClass('has-error');
+		}
+
+		if($("#sign .has-error").length==0){
+			$("#signedDataError").addClass('hidden');
+			try {
+				var tx = coinjs.transaction();
+				var t = tx.deserialize(script.val());
+
+				getLedgerSignatures(t, $("#sighashType option:selected").val(), function(result) {
+					if (result) {
+						$("#signedData textarea").val(result);
+						$("#signedData .txSize").html(result.size());
+						$("#signedData").removeClass('hidden').fadeIn();
+						}
+					});
 
 				$("#signedData .signedToVerify").on( "click", function() {
 					$("#verifyScript").val(signed).fadeOut().fadeIn();
@@ -3180,6 +3227,19 @@ var bcBasedExplorer = {
 	$("#coinSelector").change();
 
 	//$("#newKeysBtn, #newHDKeysBtn").click();
+	$("#sighashType").change(function(){
+		$("#sighashTypeInfo").html($("option:selected",this).attr('rel')).fadeOut().fadeIn();
+	});
+
+	$("#signAdvancedCollapse").click(function(){
+		if($("#signAdvanced").hasClass('hidden')){
+			$("span",this).removeClass('glyphicon-collapse-down').addClass('glyphicon-collapse-up');
+			$("#signAdvanced").removeClass("hidden");
+		} else {
+			$("span",this).removeClass('glyphicon-collapse-up').addClass('glyphicon-collapse-down');
+			$("#signAdvanced").addClass("hidden");
+		}
+	});
 
 	var _getBroadcast = _get("broadcast");
 	if(_getBroadcast[0]){

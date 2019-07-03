@@ -1775,6 +1775,160 @@
 			return true;
 		}
 
+		r.scriptListPubkey = function(redeemScript){
+			var r = [];
+			for(var i=1;i<redeemScript.chunks.length-2;i++){
+				r.push(Crypto.util.bytesToHex(redeemScript.chunks[i]));
+			}
+			return r;
+		}
+
+		r.scriptListSigs = function(scriptSig){
+			var r = [];
+			if (scriptSig.chunks[0]==0 && scriptSig.chunks[scriptSig.chunks.length-1][scriptSig.chunks[scriptSig.chunks.length-1].length-1]==174){
+				for(var i=1;i<scriptSig.chunks.length-1;i++){				
+					r.push(scriptSig.chunks[i]);
+				}
+			}
+			return r;
+		}
+		
+		r.extractRedeemScript = function(script){
+			return (script.chunks[script.chunks.length-1]==174) ? script.buffer : script.chunks[script.chunks.length-1];
+		}
+		
+		/* sign a multisig input */
+		/*
+		r.signmultisig = function(index, wif){
+			var newSignature = this.transactionSig(index, wif);
+
+			if (!this.addsignaturemultisig(index, newSignature)) {
+                throw new Error("Wrong key used for signing");
+            }
+		}
+*/
+		/* add signature to multisig script of input */
+		r.addsignaturemultisig = function(index, signature){
+			var redeemScript = this.extractRedeemScript(this.ins[index].script);
+			var sighash = Crypto.util.hexToBytes(this.transactionHash(index));
+			var newSignature = Crypto.util.hexToBytes(signature);
+			var s = coinjs.script();
+
+			var pubkeyList = this.scriptListPubkey(coinjs.script(redeemScript));
+			var sigsList = this.scriptListSigs(this.ins[index].script);
+			sigsList[sigsList.length] = newSignature;
+
+			if(this.ins[index].script.chunks[this.ins[index].script.chunks.length-1]==174){
+				pubkey = coinjs.verifySignature(sighash, sigsList[0], pubkeyList)
+				if (pubkey) {
+					s.writeOp(0);
+					s.writeBytes(newSignature);
+				}
+				else {
+					return false;
+				}
+			}  else if (this.ins[index].script.chunks[0]==0 && this.ins[index].script.chunks[this.ins[index].script.chunks.length-1][this.ins[index].script.chunks[this.ins[index].script.chunks.length-1].length-1]==174){
+				var signatures = {};
+				var pubkey;
+				
+				for (var y = 0; y < sigsList.length; y++) {
+					pubkey = coinjs.verifySignature(sighash, sigsList[y], pubkeyList)
+					if(pubkey){
+						signatures[pubkey] = sigsList[y];
+					}
+					else if (sigsList[y] == newSignature) {
+						return false;
+					}
+				}
+
+				s.writeOp(0);
+
+				for (var i in pubkeyList) {
+					if (signatures[pubkeyList[i]]) {
+						s.writeBytes(signatures[pubkeyList[i]]);
+					}
+				}
+
+			}
+
+			s.writeBytes(redeemScript);
+			this.ins[index].script = s;
+			return true;
+		}
+
+
+		
+		r.listMultiSignature = function (index) {
+			var list = {};
+			
+			var s = this.extractScriptKey(index);
+			if(s['type'] != 'multisig') return false;
+			
+			var redeemScript = this.extractRedeemScript(this.ins[index].script);
+			
+			var sighash = Crypto.util.hexToBytes(this.transactionHash(index));
+			var pubkeyList = this.scriptListPubkey(coinjs.script(redeemScript));
+			
+			for (var x = 0; x < pubkeyList.length; x++) {
+				list[pubkeyList[x]] = false;
+			}
+			
+			if (s['signed']) {
+				var sigsList = this.scriptListSigs(this.ins[index].script);
+				var pubkey = false;
+				for (var y = 0; y < sigsList.length; y++) {
+					pubkey = coinjs.verifySignature(sighash, sigsList[y], pubkeyList);
+					if (pubkey){
+						if (!list[pubkey]) {list[pubkey] = []};
+						list[pubkey].push({
+							sig: Crypto.util.bytesToHex(sigsList[y]),
+							pos: y
+						});
+					}
+				}
+			}
+
+			return list;
+		}
+		
+		r.combineMultiSignature = function (tx) {
+			var tx2 = this.deserialize(tx);
+
+			if (this.transactionHash(0) != tx2.transactionHash(0)) return false;
+			
+			var newTx = coinjs.clone(this);
+			for (var index = 0; index < this.ins.length; index++) {
+				var s = this.extractScriptKey(index);
+				if (s['type'] == 'multisig') {
+					var redeemScript = this.extractRedeemScript(this.ins[index].script);
+					var pubkeyList = this.scriptListPubkey(coinjs.script(redeemScript));
+
+					var listThis = this.listMultiSignature(index);
+					var list2 = tx2.listMultiSignature(index);
+					
+					var s = coinjs.script();
+					s.writeOp(0);
+					for (var i in pubkeyList) {
+						var pubkey = pubkeyList[i];
+
+						var valid = false;
+						try {
+							valid = (listThis[pubkey])?listThis[pubkey][0].sig:list2[pubkey][0].sig; // If multiple signatures found for a pubkey just take the first one.
+						} catch (e) {};
+
+						if (valid) {
+							s.writeBytes(Crypto.util.hexToBytes(valid));
+						}
+					}
+					
+					s.writeBytes(redeemScript); // redeemScript
+
+					newTx.ins[index].script = s
+				}
+			}
+			return newTx;
+		}
+
 		/* sign inputs */
 		r.sign = function(wif, sigHashType){
 			var shType = sigHashType || 1;
@@ -1955,10 +2109,7 @@
 
 	/* start of signature vertification functions */
 
-	coinjs.verifySignature = function (hash, sig, pubkeys) {
-		if (!coinjs.isArray(pubkeys)) {
-			throw "Invalid format for pubkeys list";
-		}
+	coinjs.verifySignature = function (hash, sig, pubkey) {
 
 		function parseSig (sig) {
 			var cursor;
@@ -1995,23 +2146,19 @@
 			r = sig.r;
 			s = sig.s;
 		} else {
-			return false;
+			throw "Invalid value for signature";
 		}
 
-		var pubkey;
-		for (var i = 0; i < pubkeys.length; i++) {
-			pubkey = pubkeys[i];
-			
+		var Q;
+		if (coinjs.isArray(pubkey)) {
 			var ecparams = EllipticCurve.getSECCurveByName("secp256k1");
-			var Q = EllipticCurve.PointFp.decodeFrom(ecparams.getCurve(), Crypto.util.hexToBytes(coinjs.pubkeydecompress(pubkey)));
-
-			var e = BigInteger.fromByteArrayUnsigned(hash);
-
-			if (coinjs.verifySignatureRaw(e, r, s, Q)) {
-				return pubkey;
-			}
+			Q = EllipticCurve.PointFp.decodeFrom(ecparams.getCurve(), pubkey);
+		} else {
+			throw "Invalid format for pubkey value, must be byte array";
 		}
-		return false;
+		var e = BigInteger.fromByteArrayUnsigned(hash);
+
+		return coinjs.verifySignatureRaw(e, r, s, Q);
 	}
 
 	coinjs.verifySignatureRaw = function (e, r, s, Q) {
