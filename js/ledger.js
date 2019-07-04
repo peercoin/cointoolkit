@@ -936,7 +936,7 @@ window.Buffer = buffer.Buffer;
 	  _createClass(Btc, [{
 	    key: "hashPublicKey",
 	    value: function hashPublicKey(buffer) {
-	      return (0, _createHash2.default)("rmd160").update((0, _createHash2.default)("sha256").update(buffer).digest()).digest();
+	      return (0, createHash)("rmd160").update((0, createHash)("sha256").update(buffer).digest()).digest();
 	    }
 	  }, {
 	    key: "getWalletPublicKey_private",
@@ -1132,12 +1132,12 @@ window.Buffer = buffer.Buffer;
 	                throw new Error("Decred does not implement BIP143");
 
 	              case 5:
-	                sha = (0, _createHash2.default)("sha256");
+	                sha = (0, createHash)("sha256");
 
 	                sha.update(this.serializeTransaction(transaction, true));
 	                hash = sha.digest();
 
-	                sha = (0, _createHash2.default)("sha256");
+	                sha = (0, createHash)("sha256");
 	                sha.update(hash);
 	                hash = sha.digest();
 	                data = Buffer.alloc(4);
