@@ -748,7 +748,7 @@ $(document).ready(function() {
 						var result=false;
 						if (currenttransaction.ins[0].script.buffer.slice(-1) == coinjs.opcode.OP_CHECKMULTISIG) {
 							// check if public key is part of multisig
-							result = await appBtc.signP2SHTransaction(inputs, paths, outputsBuffer, undefined, hashType, !isPeercoin, undefined, timeStamp);
+							result = await appBtc.signP2SHTransaction(inputs, paths, outputsBuffer, undefined, hashType, false, undefined, timeStamp);
 
 							var success=false;
 
