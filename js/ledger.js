@@ -888,8 +888,6 @@ window.Buffer = buffer.Buffer;
 
 
 
-	var _createHash2 = _interopRequireDefault(createHash);
-
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
@@ -936,7 +934,7 @@ window.Buffer = buffer.Buffer;
 	  _createClass(Btc, [{
 	    key: "hashPublicKey",
 	    value: function hashPublicKey(buffer) {
-	      return (0, _createHash2.default)("rmd160").update((0, _createHash2.default)("sha256").update(buffer).digest()).digest();
+	      return window.createHash("rmd160").update(window.createHash("sha256").update(buffer).digest()).digest();
 	    }
 	  }, {
 	    key: "getWalletPublicKey_private",
@@ -1132,12 +1130,12 @@ window.Buffer = buffer.Buffer;
 	                throw new Error("Decred does not implement BIP143");
 
 	              case 5:
-	                sha = (0, _createHash2.default)("sha256");
+	                sha = window.createHash("sha256");
 
 	                sha.update(this.serializeTransaction(transaction, true));
 	                hash = sha.digest();
 
-	                sha = (0, _createHash2.default)("sha256");
+	                sha = window.createHash("sha256");
 	                sha.update(hash);
 	                hash = sha.digest();
 	                data = Buffer.alloc(4);
