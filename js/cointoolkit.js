@@ -728,7 +728,8 @@ $(document).ready(function() {
 
 			for (var i = 0; i < currenttransaction.ins.length; i++) {
 				var result = providers[$("#coinSelector").val()].getTransaction[toolkit.getTransaction](currenttransaction.ins[i].outpoint.hash,i,async function(result) {
-					inputs.push([result[1],appBtc.splitTransaction(result[0],false,isPeercoin),currenttransaction.ins[result[1]].outpoint.index,script]);
+				// todo replace !isPeercoin with proper segwit support flag from coinjs params
+					inputs.push([result[1],appBtc.splitTransaction(result[0],!isPeercoin,isPeercoin),currenttransaction.ins[result[1]].outpoint.index,script]);
 					paths.push(path);
 					if (inputs.length == currenttransaction.ins.length) {
 						// we are ready
@@ -747,7 +748,7 @@ $(document).ready(function() {
 						var result=false;
 						if (currenttransaction.ins[0].script.buffer.slice(-1) == coinjs.opcode.OP_CHECKMULTISIG) {
 							// check if public key is part of multisig
-							result = await appBtc.signP2SHTransaction(inputs, paths, outputsBuffer, undefined, hashType, undefined, undefined, timeStamp);
+							result = await appBtc.signP2SHTransaction(inputs, paths, outputsBuffer, undefined, hashType, !isPeercoin, undefined, timeStamp);
 
 							var success=false;
 
