@@ -868,6 +868,11 @@ window.Buffer = buffer.Buffer;
 
 	var createHash = require$$0.createHash;
 
+	var index = /*#__PURE__*/Object.freeze({
+		default: createHash,
+		__moduleExports: createHash
+	});
+
 	var Btc_1 = createCommonjsModule(function (module, exports) {
 
 	Object.defineProperty(exports, "__esModule", {
@@ -936,7 +941,7 @@ window.Buffer = buffer.Buffer;
 	  _createClass(Btc, [{
 	    key: "hashPublicKey",
 	    value: function hashPublicKey(buffer) {
-	      return (0, createHash)("rmd160").update((0, createHash)("sha256").update(buffer).digest()).digest();
+	      return (0, _createHash2.default)("rmd160").update((0, _createHash2.default)("sha256").update(buffer).digest()).digest();
 	    }
 	  }, {
 	    key: "getWalletPublicKey_private",
@@ -1132,12 +1137,12 @@ window.Buffer = buffer.Buffer;
 	                throw new Error("Decred does not implement BIP143");
 
 	              case 5:
-	                sha = (0, createHash)("sha256");
+	                sha = (0, _createHash2.default)("sha256");
 
 	                sha.update(this.serializeTransaction(transaction, true));
 	                hash = sha.digest();
 
-	                sha = (0, createHash)("sha256");
+	                sha = (0, _createHash2.default)("sha256");
 	                sha.update(hash);
 	                hash = sha.digest();
 	                data = Buffer.alloc(4);
@@ -3646,12 +3651,12 @@ window.Buffer = buffer.Buffer;
 
 	});
 
-	var index$2 = unwrapExports(lib$2);
+	var index$3 = unwrapExports(lib$2);
 	var lib_1$2 = lib$2.log;
 	var lib_2$2 = lib$2.listen;
 
-	var index$3 = /*#__PURE__*/Object.freeze({
-		default: index$2,
+	var index$4 = /*#__PURE__*/Object.freeze({
+		default: index$3,
 		__moduleExports: lib$2,
 		log: lib_1$2,
 		listen: lib_2$2
@@ -4818,6 +4823,862 @@ window.Buffer = buffer.Buffer;
 
 	var u2fApi$1 = u2fApi;
 
+	var helpers$2 = createCommonjsModule(function (module, exports) {
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+	/* eslint-disable no-continue */
+	/* eslint-disable no-param-reassign */
+	/* eslint-disable no-prototype-builtins */
+
+	var errorClasses = {};
+	var deserializers = {};
+
+	var addCustomErrorDeserializer = exports.addCustomErrorDeserializer = function addCustomErrorDeserializer(name, deserializer) {
+	  deserializers[name] = deserializer;
+	};
+
+	var createCustomErrorClass = exports.createCustomErrorClass = function createCustomErrorClass(name) {
+	  var C = function CustomError(message, fields) {
+	    Object.assign(this, fields);
+	    this.name = name;
+	    this.message = message || name;
+	    this.stack = new Error().stack;
+	  };
+	  // $FlowFixMe
+	  C.prototype = new Error();
+
+	  errorClasses[name] = C;
+	  // $FlowFixMe we can't easily type a subset of Error for now...
+	  return C;
+	};
+
+	// inspired from https://github.com/programble/errio/blob/master/index.js
+	var deserializeError = exports.deserializeError = function deserializeError(object) {
+	  if ((typeof object === "undefined" ? "undefined" : _typeof(object)) === "object" && object) {
+	    try {
+	      // $FlowFixMe FIXME HACK
+	      var msg = JSON.parse(object.message);
+	      if (msg.message && msg.name) {
+	        object = msg;
+	      }
+	    } catch (e) {
+	      // nothing
+	    }
+
+	    var error = void 0;
+	    if (typeof object.name === "string") {
+	      var _object = object,
+	          name = _object.name;
+
+	      var des = deserializers[name];
+	      if (des) {
+	        error = des(object);
+	      } else {
+	        var _constructor = name === "Error" ? Error : errorClasses[name];
+
+	        if (!_constructor) {
+	          console.warn("deserializing an unknown class '" + name + "'");
+	          _constructor = createCustomErrorClass(name);
+	        }
+
+	        error = Object.create(_constructor.prototype);
+	        try {
+	          for (var prop in object) {
+	            if (object.hasOwnProperty(prop)) {
+	              error[prop] = object[prop];
+	            }
+	          }
+	        } catch (e) {
+	          // sometimes setting a property can fail (e.g. .name)
+	        }
+	      }
+	    } else {
+	      error = new Error(object.message);
+	    }
+
+	    if (!error.stack && Error.captureStackTrace) {
+	      Error.captureStackTrace(error, deserializeError);
+	    }
+	    return error;
+	  }
+	  return new Error(String(object));
+	};
+
+	// inspired from https://github.com/sindresorhus/serialize-error/blob/master/index.js
+	var serializeError = exports.serializeError = function serializeError(value) {
+	  if (!value) return value;
+	  if ((typeof value === "undefined" ? "undefined" : _typeof(value)) === "object") {
+	    return destroyCircular(value, []);
+	  }
+	  if (typeof value === "function") {
+	    return "[Function: " + (value.name || "anonymous") + "]";
+	  }
+	  return value;
+	};
+
+	// https://www.npmjs.com/package/destroy-circular
+	function destroyCircular(from, seen) {
+	  var to = {};
+	  seen.push(from);
+	  var _iteratorNormalCompletion = true;
+	  var _didIteratorError = false;
+	  var _iteratorError = undefined;
+
+	  try {
+	    for (var _iterator = Object.keys(from)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	      var key = _step.value;
+
+	      var value = from[key];
+	      if (typeof value === "function") {
+	        continue;
+	      }
+	      if (!value || (typeof value === "undefined" ? "undefined" : _typeof(value)) !== "object") {
+	        to[key] = value;
+	        continue;
+	      }
+	      if (seen.indexOf(from[key]) === -1) {
+	        to[key] = destroyCircular(from[key], seen.slice(0));
+	        continue;
+	      }
+	      to[key] = "[Circular]";
+	    }
+	  } catch (err) {
+	    _didIteratorError = true;
+	    _iteratorError = err;
+	  } finally {
+	    try {
+	      if (!_iteratorNormalCompletion && _iterator.return) {
+	        _iterator.return();
+	      }
+	    } finally {
+	      if (_didIteratorError) {
+	        throw _iteratorError;
+	      }
+	    }
+	  }
+
+	  if (typeof from.name === "string") {
+	    to.name = from.name;
+	  }
+	  if (typeof from.message === "string") {
+	    to.message = from.message;
+	  }
+	  if (typeof from.stack === "string") {
+	    to.stack = from.stack;
+	  }
+	  return to;
+	}
+
+	});
+
+	unwrapExports(helpers$2);
+	var helpers_1$1 = helpers$2.addCustomErrorDeserializer;
+	var helpers_2$1 = helpers$2.createCustomErrorClass;
+	var helpers_3$1 = helpers$2.deserializeError;
+	var helpers_4$1 = helpers$2.serializeError;
+
+	var lib$3 = createCommonjsModule(function (module, exports) {
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.StatusCodes = exports.DBNotReset = exports.DBWrongPassword = exports.NoDBPathGiven = exports.FirmwareOrAppUpdateRequired = exports.LedgerAPI5xx = exports.LedgerAPI4xx = exports.GenuineCheckFailed = exports.PairingFailed = exports.SyncError = exports.FeeRequired = exports.FeeNotLoaded = exports.CantScanQRCode = exports.ETHAddressNonEIP = exports.WrongDeviceForAccount = exports.WebsocketConnectionFailed = exports.WebsocketConnectionError = exports.DeviceShouldStayInApp = exports.TransportInterfaceNotAvailable = exports.TransportOpenUserCancelled = exports.UserRefusedOnDevice = exports.UserRefusedAllowManager = exports.UserRefusedFirmwareUpdate = exports.UserRefusedAddress = exports.UserRefusedDeviceNameChange = exports.UpdateYourApp = exports.UnexpectedBootloader = exports.TimeoutTagged = exports.PasswordIncorrectError = exports.PasswordsDontMatchError = exports.NotEnoughGas = exports.NotEnoughBalanceBecauseDestinationNotCreated = exports.NotEnoughBalance = exports.NoAddressesFound = exports.NetworkDown = exports.ManagerUninstallBTCDep = exports.ManagerNotEnoughSpaceError = exports.ManagerDeviceLockedError = exports.ManagerAppRelyOnBTCError = exports.ManagerAppAlreadyInstalledError = exports.LedgerAPINotAvailable = exports.LedgerAPIErrorWithMessage = exports.LedgerAPIError = exports.UnknownMCU = exports.LatestMCUInstalledError = exports.InvalidAddressBecauseDestinationIsAlsoSource = exports.InvalidAddress = exports.HardResetFail = exports.FeeEstimationFailed = exports.EthAppPleaseEnableContractData = exports.EnpointConfigError = exports.DisconnectedDeviceDuringOperation = exports.DisconnectedDevice = exports.DeviceSocketNoBulkStatus = exports.DeviceSocketFail = exports.DeviceNameInvalid = exports.DeviceHalted = exports.DeviceInOSUExpected = exports.DeviceOnDashboardExpected = exports.DeviceNotGenuineError = exports.DeviceGenuineSocketEarlyClose = exports.DeviceAppVerifyNotSupported = exports.CurrencyNotSupported = exports.CashAddrNotSupported = exports.CantOpenDevice = exports.BtcUnmatchedApp = exports.BluetoothRequired = exports.AccountNameRequiredError = exports.addCustomErrorDeserializer = exports.createCustomErrorClass = exports.deserializeError = exports.serializeError = undefined;
+	exports.TransportError = TransportError;
+	exports.getAltStatusMessage = getAltStatusMessage;
+	exports.TransportStatusError = TransportStatusError;
+
+
+
+	exports.serializeError = helpers$2.serializeError;
+	exports.deserializeError = helpers$2.deserializeError;
+	exports.createCustomErrorClass = helpers$2.createCustomErrorClass;
+	exports.addCustomErrorDeserializer = helpers$2.addCustomErrorDeserializer;
+	var AccountNameRequiredError = exports.AccountNameRequiredError = (0, helpers$2.createCustomErrorClass)("AccountNameRequired");
+	var BluetoothRequired = exports.BluetoothRequired = (0, helpers$2.createCustomErrorClass)("BluetoothRequired");
+	var BtcUnmatchedApp = exports.BtcUnmatchedApp = (0, helpers$2.createCustomErrorClass)("BtcUnmatchedApp");
+	var CantOpenDevice = exports.CantOpenDevice = (0, helpers$2.createCustomErrorClass)("CantOpenDevice");
+	var CashAddrNotSupported = exports.CashAddrNotSupported = (0, helpers$2.createCustomErrorClass)("CashAddrNotSupported");
+	var CurrencyNotSupported = exports.CurrencyNotSupported = (0, helpers$2.createCustomErrorClass)("CurrencyNotSupported");
+	var DeviceAppVerifyNotSupported = exports.DeviceAppVerifyNotSupported = (0, helpers$2.createCustomErrorClass)("DeviceAppVerifyNotSupported");
+	var DeviceGenuineSocketEarlyClose = exports.DeviceGenuineSocketEarlyClose = (0, helpers$2.createCustomErrorClass)("DeviceGenuineSocketEarlyClose");
+	var DeviceNotGenuineError = exports.DeviceNotGenuineError = (0, helpers$2.createCustomErrorClass)("DeviceNotGenuine");
+	var DeviceOnDashboardExpected = exports.DeviceOnDashboardExpected = (0, helpers$2.createCustomErrorClass)("DeviceOnDashboardExpected");
+	var DeviceInOSUExpected = exports.DeviceInOSUExpected = (0, helpers$2.createCustomErrorClass)("DeviceInOSUExpected");
+	var DeviceHalted = exports.DeviceHalted = (0, helpers$2.createCustomErrorClass)("DeviceHalted");
+	var DeviceNameInvalid = exports.DeviceNameInvalid = (0, helpers$2.createCustomErrorClass)("DeviceNameInvalid");
+	var DeviceSocketFail = exports.DeviceSocketFail = (0, helpers$2.createCustomErrorClass)("DeviceSocketFail");
+	var DeviceSocketNoBulkStatus = exports.DeviceSocketNoBulkStatus = (0, helpers$2.createCustomErrorClass)("DeviceSocketNoBulkStatus");
+	var DisconnectedDevice = exports.DisconnectedDevice = (0, helpers$2.createCustomErrorClass)("DisconnectedDevice");
+	var DisconnectedDeviceDuringOperation = exports.DisconnectedDeviceDuringOperation = (0, helpers$2.createCustomErrorClass)("DisconnectedDeviceDuringOperation");
+	var EnpointConfigError = exports.EnpointConfigError = (0, helpers$2.createCustomErrorClass)("EnpointConfig");
+	var EthAppPleaseEnableContractData = exports.EthAppPleaseEnableContractData = (0, helpers$2.createCustomErrorClass)("EthAppPleaseEnableContractData");
+	var FeeEstimationFailed = exports.FeeEstimationFailed = (0, helpers$2.createCustomErrorClass)("FeeEstimationFailed");
+	var HardResetFail = exports.HardResetFail = (0, helpers$2.createCustomErrorClass)("HardResetFail");
+	var InvalidAddress = exports.InvalidAddress = (0, helpers$2.createCustomErrorClass)("InvalidAddress");
+	var InvalidAddressBecauseDestinationIsAlsoSource = exports.InvalidAddressBecauseDestinationIsAlsoSource = (0, helpers$2.createCustomErrorClass)("InvalidAddressBecauseDestinationIsAlsoSource");
+	var LatestMCUInstalledError = exports.LatestMCUInstalledError = (0, helpers$2.createCustomErrorClass)("LatestMCUInstalledError");
+	var UnknownMCU = exports.UnknownMCU = (0, helpers$2.createCustomErrorClass)("UnknownMCU");
+	var LedgerAPIError = exports.LedgerAPIError = (0, helpers$2.createCustomErrorClass)("LedgerAPIError");
+	var LedgerAPIErrorWithMessage = exports.LedgerAPIErrorWithMessage = (0, helpers$2.createCustomErrorClass)("LedgerAPIErrorWithMessage");
+	var LedgerAPINotAvailable = exports.LedgerAPINotAvailable = (0, helpers$2.createCustomErrorClass)("LedgerAPINotAvailable");
+	var ManagerAppAlreadyInstalledError = exports.ManagerAppAlreadyInstalledError = (0, helpers$2.createCustomErrorClass)("ManagerAppAlreadyInstalled");
+	var ManagerAppRelyOnBTCError = exports.ManagerAppRelyOnBTCError = (0, helpers$2.createCustomErrorClass)("ManagerAppRelyOnBTC");
+	var ManagerDeviceLockedError = exports.ManagerDeviceLockedError = (0, helpers$2.createCustomErrorClass)("ManagerDeviceLocked");
+	var ManagerNotEnoughSpaceError = exports.ManagerNotEnoughSpaceError = (0, helpers$2.createCustomErrorClass)("ManagerNotEnoughSpace");
+	var ManagerUninstallBTCDep = exports.ManagerUninstallBTCDep = (0, helpers$2.createCustomErrorClass)("ManagerUninstallBTCDep");
+	var NetworkDown = exports.NetworkDown = (0, helpers$2.createCustomErrorClass)("NetworkDown");
+	var NoAddressesFound = exports.NoAddressesFound = (0, helpers$2.createCustomErrorClass)("NoAddressesFound");
+	var NotEnoughBalance = exports.NotEnoughBalance = (0, helpers$2.createCustomErrorClass)("NotEnoughBalance");
+	var NotEnoughBalanceBecauseDestinationNotCreated = exports.NotEnoughBalanceBecauseDestinationNotCreated = (0, helpers$2.createCustomErrorClass)("NotEnoughBalanceBecauseDestinationNotCreated");
+	var NotEnoughGas = exports.NotEnoughGas = (0, helpers$2.createCustomErrorClass)("NotEnoughGas");
+	var PasswordsDontMatchError = exports.PasswordsDontMatchError = (0, helpers$2.createCustomErrorClass)("PasswordsDontMatch");
+	var PasswordIncorrectError = exports.PasswordIncorrectError = (0, helpers$2.createCustomErrorClass)("PasswordIncorrect");
+	var TimeoutTagged = exports.TimeoutTagged = (0, helpers$2.createCustomErrorClass)("TimeoutTagged");
+	var UnexpectedBootloader = exports.UnexpectedBootloader = (0, helpers$2.createCustomErrorClass)("UnexpectedBootloader");
+	var UpdateYourApp = exports.UpdateYourApp = (0, helpers$2.createCustomErrorClass)("UpdateYourApp");
+	var UserRefusedDeviceNameChange = exports.UserRefusedDeviceNameChange = (0, helpers$2.createCustomErrorClass)("UserRefusedDeviceNameChange");
+	var UserRefusedAddress = exports.UserRefusedAddress = (0, helpers$2.createCustomErrorClass)("UserRefusedAddress");
+	var UserRefusedFirmwareUpdate = exports.UserRefusedFirmwareUpdate = (0, helpers$2.createCustomErrorClass)("UserRefusedFirmwareUpdate");
+	var UserRefusedAllowManager = exports.UserRefusedAllowManager = (0, helpers$2.createCustomErrorClass)("UserRefusedAllowManager");
+	var UserRefusedOnDevice = exports.UserRefusedOnDevice = (0, helpers$2.createCustomErrorClass)("UserRefusedOnDevice"); // TODO rename because it's just for transaction refusal
+	var TransportOpenUserCancelled = exports.TransportOpenUserCancelled = (0, helpers$2.createCustomErrorClass)("TransportOpenUserCancelled");
+	var TransportInterfaceNotAvailable = exports.TransportInterfaceNotAvailable = (0, helpers$2.createCustomErrorClass)("TransportInterfaceNotAvailable");
+	var DeviceShouldStayInApp = exports.DeviceShouldStayInApp = (0, helpers$2.createCustomErrorClass)("DeviceShouldStayInApp");
+	var WebsocketConnectionError = exports.WebsocketConnectionError = (0, helpers$2.createCustomErrorClass)("WebsocketConnectionError");
+	var WebsocketConnectionFailed = exports.WebsocketConnectionFailed = (0, helpers$2.createCustomErrorClass)("WebsocketConnectionFailed");
+	var WrongDeviceForAccount = exports.WrongDeviceForAccount = (0, helpers$2.createCustomErrorClass)("WrongDeviceForAccount");
+	var ETHAddressNonEIP = exports.ETHAddressNonEIP = (0, helpers$2.createCustomErrorClass)("ETHAddressNonEIP");
+	var CantScanQRCode = exports.CantScanQRCode = (0, helpers$2.createCustomErrorClass)("CantScanQRCode");
+	var FeeNotLoaded = exports.FeeNotLoaded = (0, helpers$2.createCustomErrorClass)("FeeNotLoaded");
+	var FeeRequired = exports.FeeRequired = (0, helpers$2.createCustomErrorClass)("FeeRequired");
+	var SyncError = exports.SyncError = (0, helpers$2.createCustomErrorClass)("SyncError");
+	var PairingFailed = exports.PairingFailed = (0, helpers$2.createCustomErrorClass)("PairingFailed");
+	var GenuineCheckFailed = exports.GenuineCheckFailed = (0, helpers$2.createCustomErrorClass)("GenuineCheckFailed");
+	var LedgerAPI4xx = exports.LedgerAPI4xx = (0, helpers$2.createCustomErrorClass)("LedgerAPI4xx");
+	var LedgerAPI5xx = exports.LedgerAPI5xx = (0, helpers$2.createCustomErrorClass)("LedgerAPI5xx");
+	var FirmwareOrAppUpdateRequired = exports.FirmwareOrAppUpdateRequired = (0, helpers$2.createCustomErrorClass)("FirmwareOrAppUpdateRequired");
+
+	// db stuff, no need to translate
+	var NoDBPathGiven = exports.NoDBPathGiven = (0, helpers$2.createCustomErrorClass)("NoDBPathGiven");
+	var DBWrongPassword = exports.DBWrongPassword = (0, helpers$2.createCustomErrorClass)("DBWrongPassword");
+	var DBNotReset = exports.DBNotReset = (0, helpers$2.createCustomErrorClass)("DBNotReset");
+
+	/**
+	 * TransportError is used for any generic transport errors.
+	 * e.g. Error thrown when data received by exchanges are incorrect or if exchanged failed to communicate with the device for various reason.
+	 */
+	function TransportError(message, id) {
+	  this.name = "TransportError";
+	  this.message = message;
+	  this.stack = new Error().stack;
+	  this.id = id;
+	}
+	//$FlowFixMe
+	TransportError.prototype = new Error();
+
+	(0, helpers$2.addCustomErrorDeserializer)("TransportError", function (e) {
+	  return new TransportError(e.message, e.id);
+	});
+
+	var StatusCodes = exports.StatusCodes = {
+	  PIN_REMAINING_ATTEMPTS: 0x63c0,
+	  INCORRECT_LENGTH: 0x6700,
+	  COMMAND_INCOMPATIBLE_FILE_STRUCTURE: 0x6981,
+	  SECURITY_STATUS_NOT_SATISFIED: 0x6982,
+	  CONDITIONS_OF_USE_NOT_SATISFIED: 0x6985,
+	  INCORRECT_DATA: 0x6a80,
+	  NOT_ENOUGH_MEMORY_SPACE: 0x6a84,
+	  REFERENCED_DATA_NOT_FOUND: 0x6a88,
+	  FILE_ALREADY_EXISTS: 0x6a89,
+	  INCORRECT_P1_P2: 0x6b00,
+	  INS_NOT_SUPPORTED: 0x6d00,
+	  CLA_NOT_SUPPORTED: 0x6e00,
+	  TECHNICAL_PROBLEM: 0x6f00,
+	  OK: 0x9000,
+	  MEMORY_PROBLEM: 0x9240,
+	  NO_EF_SELECTED: 0x9400,
+	  INVALID_OFFSET: 0x9402,
+	  FILE_NOT_FOUND: 0x9404,
+	  INCONSISTENT_FILE: 0x9408,
+	  ALGORITHM_NOT_SUPPORTED: 0x9484,
+	  INVALID_KCV: 0x9485,
+	  CODE_NOT_INITIALIZED: 0x9802,
+	  ACCESS_CONDITION_NOT_FULFILLED: 0x9804,
+	  CONTRADICTION_SECRET_CODE_STATUS: 0x9808,
+	  CONTRADICTION_INVALIDATION: 0x9810,
+	  CODE_BLOCKED: 0x9840,
+	  MAX_VALUE_REACHED: 0x9850,
+	  GP_AUTH_FAILED: 0x6300,
+	  LICENSING: 0x6f42,
+	  HALTED: 0x6faa
+	};
+
+	function getAltStatusMessage(code) {
+	  switch (code) {
+	    // improve text of most common errors
+	    case 0x6700:
+	      return "Incorrect length";
+	    case 0x6982:
+	      return "Security not satisfied (dongle locked or have invalid access rights)";
+	    case 0x6985:
+	      return "Condition of use not satisfied (denied by the user?)";
+	    case 0x6a80:
+	      return "Invalid data received";
+	    case 0x6b00:
+	      return "Invalid parameter received";
+	  }
+	  if (0x6f00 <= code && code <= 0x6fff) {
+	    return "Internal error, please report";
+	  }
+	}
+
+	/**
+	 * Error thrown when a device returned a non success status.
+	 * the error.statusCode is one of the `StatusCodes` exported by this library.
+	 */
+	function TransportStatusError(statusCode) {
+	  this.name = "TransportStatusError";
+	  var statusText = Object.keys(StatusCodes).find(function (k) {
+	    return StatusCodes[k] === statusCode;
+	  }) || "UNKNOWN_ERROR";
+	  var smsg = getAltStatusMessage(statusCode) || statusText;
+	  var statusCodeStr = statusCode.toString(16);
+	  this.message = "Ledger device: " + smsg + " (0x" + statusCodeStr + ")";
+	  this.stack = new Error().stack;
+	  this.statusCode = statusCode;
+	  this.statusText = statusText;
+	}
+	//$FlowFixMe
+	TransportStatusError.prototype = new Error();
+
+	(0, helpers$2.addCustomErrorDeserializer)("TransportStatusError", function (e) {
+	  return new TransportStatusError(e.statusCode);
+	});
+
+	});
+
+	unwrapExports(lib$3);
+	var lib_1$3 = lib$3.StatusCodes;
+	var lib_2$3 = lib$3.DBNotReset;
+	var lib_3$2 = lib$3.DBWrongPassword;
+	var lib_4$2 = lib$3.NoDBPathGiven;
+	var lib_5$2 = lib$3.FirmwareOrAppUpdateRequired;
+	var lib_6$2 = lib$3.LedgerAPI5xx;
+	var lib_7$2 = lib$3.LedgerAPI4xx;
+	var lib_8$2 = lib$3.GenuineCheckFailed;
+	var lib_9$2 = lib$3.PairingFailed;
+	var lib_10$2 = lib$3.SyncError;
+	var lib_11$1 = lib$3.FeeRequired;
+	var lib_12$1 = lib$3.FeeNotLoaded;
+	var lib_13$1 = lib$3.CantScanQRCode;
+	var lib_14$1 = lib$3.ETHAddressNonEIP;
+	var lib_15$1 = lib$3.WrongDeviceForAccount;
+	var lib_16$1 = lib$3.WebsocketConnectionFailed;
+	var lib_17$1 = lib$3.WebsocketConnectionError;
+	var lib_18$1 = lib$3.DeviceShouldStayInApp;
+	var lib_19$1 = lib$3.TransportInterfaceNotAvailable;
+	var lib_20$1 = lib$3.TransportOpenUserCancelled;
+	var lib_21$1 = lib$3.UserRefusedOnDevice;
+	var lib_22$1 = lib$3.UserRefusedAllowManager;
+	var lib_23$1 = lib$3.UserRefusedFirmwareUpdate;
+	var lib_24$1 = lib$3.UserRefusedAddress;
+	var lib_25$1 = lib$3.UserRefusedDeviceNameChange;
+	var lib_26$1 = lib$3.UpdateYourApp;
+	var lib_27$1 = lib$3.UnexpectedBootloader;
+	var lib_28$1 = lib$3.TimeoutTagged;
+	var lib_29$1 = lib$3.PasswordIncorrectError;
+	var lib_30$1 = lib$3.PasswordsDontMatchError;
+	var lib_31$1 = lib$3.NotEnoughGas;
+	var lib_32$1 = lib$3.NotEnoughBalanceBecauseDestinationNotCreated;
+	var lib_33$1 = lib$3.NotEnoughBalance;
+	var lib_34$1 = lib$3.NoAddressesFound;
+	var lib_35$1 = lib$3.NetworkDown;
+	var lib_36$1 = lib$3.ManagerUninstallBTCDep;
+	var lib_37$1 = lib$3.ManagerNotEnoughSpaceError;
+	var lib_38$1 = lib$3.ManagerDeviceLockedError;
+	var lib_39$1 = lib$3.ManagerAppRelyOnBTCError;
+	var lib_40$1 = lib$3.ManagerAppAlreadyInstalledError;
+	var lib_41$1 = lib$3.LedgerAPINotAvailable;
+	var lib_42$1 = lib$3.LedgerAPIErrorWithMessage;
+	var lib_43$1 = lib$3.LedgerAPIError;
+	var lib_44$1 = lib$3.UnknownMCU;
+	var lib_45$1 = lib$3.LatestMCUInstalledError;
+	var lib_46$1 = lib$3.InvalidAddressBecauseDestinationIsAlsoSource;
+	var lib_47$1 = lib$3.InvalidAddress;
+	var lib_48$1 = lib$3.HardResetFail;
+	var lib_49$1 = lib$3.FeeEstimationFailed;
+	var lib_50$1 = lib$3.EthAppPleaseEnableContractData;
+	var lib_51$1 = lib$3.EnpointConfigError;
+	var lib_52$1 = lib$3.DisconnectedDeviceDuringOperation;
+	var lib_53$1 = lib$3.DisconnectedDevice;
+	var lib_54$1 = lib$3.DeviceSocketNoBulkStatus;
+	var lib_55$1 = lib$3.DeviceSocketFail;
+	var lib_56$1 = lib$3.DeviceNameInvalid;
+	var lib_57$1 = lib$3.DeviceHalted;
+	var lib_58$1 = lib$3.DeviceInOSUExpected;
+	var lib_59$1 = lib$3.DeviceOnDashboardExpected;
+	var lib_60$1 = lib$3.DeviceNotGenuineError;
+	var lib_61$1 = lib$3.DeviceGenuineSocketEarlyClose;
+	var lib_62$1 = lib$3.DeviceAppVerifyNotSupported;
+	var lib_63$1 = lib$3.CurrencyNotSupported;
+	var lib_64$1 = lib$3.CashAddrNotSupported;
+	var lib_65$1 = lib$3.CantOpenDevice;
+	var lib_66$1 = lib$3.BtcUnmatchedApp;
+	var lib_67$1 = lib$3.BluetoothRequired;
+	var lib_68$1 = lib$3.AccountNameRequiredError;
+	var lib_69$1 = lib$3.addCustomErrorDeserializer;
+	var lib_70$1 = lib$3.createCustomErrorClass;
+	var lib_71$1 = lib$3.deserializeError;
+	var lib_72$1 = lib$3.serializeError;
+	var lib_73$1 = lib$3.TransportError;
+	var lib_74$1 = lib$3.getAltStatusMessage;
+	var lib_75$1 = lib$3.TransportStatusError;
+
+	var Transport_1$1 = createCommonjsModule(function (module, exports) {
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.getAltStatusMessage = exports.StatusCodes = exports.TransportStatusError = exports.TransportError = undefined;
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+
+
+	var _events3 = _interopRequireDefault(EventEmitter);
+
+
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	exports.TransportError = lib$3.TransportError;
+	exports.TransportStatusError = lib$3.TransportStatusError;
+	exports.StatusCodes = lib$3.StatusCodes;
+	exports.getAltStatusMessage = lib$3.getAltStatusMessage;
+
+	/**
+	 */
+
+
+	/**
+	 */
+
+
+	/**
+	 * type: add or remove event
+	 * descriptor: a parameter that can be passed to open(descriptor)
+	 * deviceModel: device info on the model (is it a nano s, nano x, ...)
+	 * device: transport specific device info
+	 */
+
+	/**
+	 */
+
+	/**
+	 * Transport defines the generic interface to share between node/u2f impl
+	 * A **Descriptor** is a parametric type that is up to be determined for the implementation.
+	 * it can be for instance an ID, an file path, a URL,...
+	 */
+	var Transport = function () {
+	  function Transport() {
+	    var _this = this;
+
+	    _classCallCheck(this, Transport);
+
+	    this.exchangeTimeout = 30000;
+	    this._events = new _events3.default();
+
+	    this.send = function () {
+	      var _ref = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(cla, ins, p1, p2) {
+	        var data = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : Buffer.alloc(0);
+	        var statusList = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : [lib$3.StatusCodes.OK];
+	        var response, sw;
+	        return regeneratorRuntime.wrap(function _callee$(_context) {
+	          while (1) {
+	            switch (_context.prev = _context.next) {
+	              case 0:
+	                if (!(data.length >= 256)) {
+	                  _context.next = 2;
+	                  break;
+	                }
+
+	                throw new lib$3.TransportError("data.length exceed 256 bytes limit. Got: " + data.length, "DataLengthTooBig");
+
+	              case 2:
+	                _context.next = 4;
+	                return _this.exchange(Buffer.concat([Buffer.from([cla, ins, p1, p2]), Buffer.from([data.length]), data]));
+
+	              case 4:
+	                response = _context.sent;
+	                sw = response.readUInt16BE(response.length - 2);
+
+	                if (statusList.some(function (s) {
+	                  return s === sw;
+	                })) {
+	                  _context.next = 8;
+	                  break;
+	                }
+
+	                throw new lib$3.TransportStatusError(sw);
+
+	              case 8:
+	                return _context.abrupt("return", response);
+
+	              case 9:
+	              case "end":
+	                return _context.stop();
+	            }
+	          }
+	        }, _callee, _this);
+	      }));
+
+	      return function (_x, _x2, _x3, _x4) {
+	        return _ref.apply(this, arguments);
+	      };
+	    }();
+
+	    this.exchangeAtomicImpl = function () {
+	      var _ref2 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(f) {
+	        var resolveBusy, busyPromise, res;
+	        return regeneratorRuntime.wrap(function _callee2$(_context2) {
+	          while (1) {
+	            switch (_context2.prev = _context2.next) {
+	              case 0:
+	                if (!_this.exchangeBusyPromise) {
+	                  _context2.next = 2;
+	                  break;
+	                }
+
+	                throw new lib$3.TransportError("Transport race condition", "RaceCondition");
+
+	              case 2:
+	                resolveBusy = void 0;
+	                busyPromise = new Promise(function (r) {
+	                  resolveBusy = r;
+	                });
+
+	                _this.exchangeBusyPromise = busyPromise;
+	                _context2.prev = 5;
+	                _context2.next = 8;
+	                return f();
+
+	              case 8:
+	                res = _context2.sent;
+	                return _context2.abrupt("return", res);
+
+	              case 10:
+	                _context2.prev = 10;
+
+	                if (resolveBusy) resolveBusy();
+	                _this.exchangeBusyPromise = null;
+	                return _context2.finish(10);
+
+	              case 14:
+	              case "end":
+	                return _context2.stop();
+	            }
+	          }
+	        }, _callee2, _this, [[5,, 10, 14]]);
+	      }));
+
+	      return function (_x7) {
+	        return _ref2.apply(this, arguments);
+	      };
+	    }();
+
+	    this._appAPIlock = null;
+	  }
+
+	  /**
+	   * Statically check if a transport is supported on the user's platform/browser.
+	   */
+
+
+	  /**
+	   * List once all available descriptors. For a better granularity, checkout `listen()`.
+	   * @return a promise of descriptors
+	   * @example
+	   * TransportFoo.list().then(descriptors => ...)
+	   */
+
+
+	  /**
+	   * Listen all device events for a given Transport. The method takes an Obverver of DescriptorEvent and returns a Subscription (according to Observable paradigm https://github.com/tc39/proposal-observable )
+	   * a DescriptorEvent is a `{ descriptor, type }` object. type can be `"add"` or `"remove"` and descriptor is a value you can pass to `open(descriptor)`.
+	   * each listen() call will first emit all potential device already connected and then will emit events can come over times,
+	   * for instance if you plug a USB device after listen() or a bluetooth device become discoverable.
+	   * @param observer is an object with a next, error and complete function (compatible with observer pattern)
+	   * @return a Subscription object on which you can `.unsubscribe()` to stop listening descriptors.
+	   * @example
+	  const sub = TransportFoo.listen({
+	  next: e => {
+	    if (e.type==="add") {
+	      sub.unsubscribe();
+	      const transport = await TransportFoo.open(e.descriptor);
+	      ...
+	    }
+	  },
+	  error: error => {},
+	  complete: () => {}
+	  })
+	   */
+
+
+	  /**
+	   * attempt to create a Transport instance with potentially a descriptor.
+	   * @param descriptor: the descriptor to open the transport with.
+	   * @param timeout: an optional timeout
+	   * @return a Promise of Transport instance
+	   * @example
+	  TransportFoo.open(descriptor).then(transport => ...)
+	   */
+
+
+	  /**
+	   * low level api to communicate with the device
+	   * This method is for implementations to implement but should not be directly called.
+	   * Instead, the recommanded way is to use send() method
+	   * @param apdu the data to send
+	   * @return a Promise of response data
+	   */
+
+
+	  /**
+	   * set the "scramble key" for the next exchanges with the device.
+	   * Each App can have a different scramble key and they internally will set it at instanciation.
+	   * @param key the scramble key
+	   */
+
+
+	  /**
+	   * close the exchange with the device.
+	   * @return a Promise that ends when the transport is closed.
+	   */
+
+
+	  _createClass(Transport, [{
+	    key: "on",
+
+
+	    /**
+	     * Listen to an event on an instance of transport.
+	     * Transport implementation can have specific events. Here is the common events:
+	     * * `"disconnect"` : triggered if Transport is disconnected
+	     */
+	    value: function on(eventName, cb) {
+	      this._events.on(eventName, cb);
+	    }
+
+	    /**
+	     * Stop listening to an event on an instance of transport.
+	     */
+
+	  }, {
+	    key: "off",
+	    value: function off(eventName, cb) {
+	      this._events.removeListener(eventName, cb);
+	    }
+	  }, {
+	    key: "emit",
+	    value: function emit(event) {
+	      var _events;
+
+	      for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+	        args[_key - 1] = arguments[_key];
+	      }
+
+	      (_events = this._events).emit.apply(_events, [event].concat(_toConsumableArray(args)));
+	    }
+
+	    /**
+	     * Enable or not logs of the binary exchange
+	     */
+
+	  }, {
+	    key: "setDebugMode",
+	    value: function setDebugMode() {
+	      console.warn("setDebugMode is deprecated. use @ledgerhq/logs instead. No logs are emitted in this anymore.");
+	    }
+
+	    /**
+	     * Set a timeout (in milliseconds) for the exchange call. Only some transport might implement it. (e.g. U2F)
+	     */
+
+	  }, {
+	    key: "setExchangeTimeout",
+	    value: function setExchangeTimeout(exchangeTimeout) {
+	      this.exchangeTimeout = exchangeTimeout;
+	    }
+
+	    /**
+	     * wrapper on top of exchange to simplify work of the implementation.
+	     * @param cla
+	     * @param ins
+	     * @param p1
+	     * @param p2
+	     * @param data
+	     * @param statusList is a list of accepted status code (shorts). [0x9000] by default
+	     * @return a Promise of response buffer
+	     */
+
+	  }, {
+	    key: "decorateAppAPIMethods",
+	    value: function decorateAppAPIMethods(self, methods, scrambleKey) {
+	      var _iteratorNormalCompletion = true;
+	      var _didIteratorError = false;
+	      var _iteratorError = undefined;
+
+	      try {
+	        for (var _iterator = methods[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	          var methodName = _step.value;
+
+	          self[methodName] = this.decorateAppAPIMethod(methodName, self[methodName], self, scrambleKey);
+	        }
+	      } catch (err) {
+	        _didIteratorError = true;
+	        _iteratorError = err;
+	      } finally {
+	        try {
+	          if (!_iteratorNormalCompletion && _iterator.return) {
+	            _iterator.return();
+	          }
+	        } finally {
+	          if (_didIteratorError) {
+	            throw _iteratorError;
+	          }
+	        }
+	      }
+	    }
+	  }, {
+	    key: "decorateAppAPIMethod",
+	    value: function decorateAppAPIMethod(methodName, f, ctx, scrambleKey) {
+	      var _this2 = this;
+
+	      return function () {
+	        var _ref3 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee3() {
+	          for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+	            args[_key2] = arguments[_key2];
+	          }
+
+	          var _appAPIlock;
+
+	          return regeneratorRuntime.wrap(function _callee3$(_context3) {
+	            while (1) {
+	              switch (_context3.prev = _context3.next) {
+	                case 0:
+	                  _appAPIlock = _this2._appAPIlock;
+
+	                  if (!_appAPIlock) {
+	                    _context3.next = 3;
+	                    break;
+	                  }
+
+	                  return _context3.abrupt("return", Promise.reject(new lib$3.TransportError("Ledger Device is busy (lock " + _appAPIlock + ")", "TransportLocked")));
+
+	                case 3:
+	                  _context3.prev = 3;
+
+	                  _this2._appAPIlock = methodName;
+	                  _this2.setScrambleKey(scrambleKey);
+	                  _context3.next = 8;
+	                  return f.apply(ctx, args);
+
+	                case 8:
+	                  return _context3.abrupt("return", _context3.sent);
+
+	                case 9:
+	                  _context3.prev = 9;
+
+	                  _this2._appAPIlock = null;
+	                  return _context3.finish(9);
+
+	                case 12:
+	                case "end":
+	                  return _context3.stop();
+	              }
+	            }
+	          }, _callee3, _this2, [[3,, 9, 12]]);
+	        }));
+
+	        return function () {
+	          return _ref3.apply(this, arguments);
+	        };
+	      }();
+	    }
+	  }], [{
+	    key: "create",
+
+
+	    /**
+	     * create() allows to open the first descriptor available or
+	     * throw if there is none or if timeout is reached.
+	     * This is a light helper, alternative to using listen() and open() (that you may need for any more advanced usecase)
+	     * @example
+	    TransportFoo.create().then(transport => ...)
+	     */
+	    value: function create() {
+	      var _this3 = this;
+
+	      var openTimeout = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 3000;
+	      var listenTimeout = arguments[1];
+
+	      return new Promise(function (resolve, reject) {
+	        var found = false;
+	        var sub = _this3.listen({
+	          next: function next(e) {
+	            found = true;
+	            if (sub) sub.unsubscribe();
+	            if (listenTimeoutId) clearTimeout(listenTimeoutId);
+	            _this3.open(e.descriptor, openTimeout).then(resolve, reject);
+	          },
+	          error: function error(e) {
+	            if (listenTimeoutId) clearTimeout(listenTimeoutId);
+	            reject(e);
+	          },
+	          complete: function complete() {
+	            if (listenTimeoutId) clearTimeout(listenTimeoutId);
+	            if (!found) {
+	              reject(new lib$3.TransportError(_this3.ErrorMessage_NoDeviceFound, "NoDeviceFound"));
+	            }
+	          }
+	        });
+	        var listenTimeoutId = listenTimeout ? setTimeout(function () {
+	          sub.unsubscribe();
+	          reject(new lib$3.TransportError(_this3.ErrorMessage_ListenTimeout, "ListenTimeout"));
+	        }, listenTimeout) : null;
+	      });
+	    }
+
+	    // $FlowFixMe
+
+	  }]);
+
+	  return Transport;
+	}();
+
+	Transport.ErrorMessage_ListenTimeout = "No Ledger device found (timeout)";
+	Transport.ErrorMessage_NoDeviceFound = "No Ledger device found";
+	exports.default = Transport;
+
+	});
+
+	unwrapExports(Transport_1$1);
+	var Transport_2$1 = Transport_1$1.getAltStatusMessage;
+	var Transport_3$1 = Transport_1$1.StatusCodes;
+	var Transport_4$1 = Transport_1$1.TransportStatusError;
+	var Transport_5$1 = Transport_1$1.TransportError;
+
 	var TransportU2F_1 = createCommonjsModule(function (module, exports) {
 
 	Object.defineProperty(exports, "__esModule", {
@@ -4832,7 +5693,7 @@ window.Buffer = buffer.Buffer;
 
 
 
-	var _hwTransport2 = _interopRequireDefault(Transport_1);
+	var _hwTransport2 = _interopRequireDefault(Transport_1$1);
 
 
 
@@ -4849,7 +5710,7 @@ window.Buffer = buffer.Buffer;
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 	function wrapU2FTransportError(originalError, message, id) {
-	  var err = new lib.TransportError(message, id);
+	  var err = new lib$3.TransportError(message, id);
 	  // $FlowFixMe
 	  err.originalError = originalError;
 	  return err;
@@ -5081,7 +5942,7 @@ window.Buffer = buffer.Buffer;
 	      observer.next({ type: "add", descriptor: null });
 	      observer.complete();
 	    } else {
-	      observer.error(new lib.TransportError("U2F browser support is needed for Ledger. " + "Please use Chrome, Opera or Firefox with a U2F extension. " + "Also make sure you're on an HTTPS connection", "U2FNotSupported"));
+	      observer.error(new lib$3.TransportError("U2F browser support is needed for Ledger. " + "Please use Chrome, Opera or Firefox with a U2F extension. " + "Also make sure you're on an HTTPS connection", "U2FNotSupported"));
 	    }
 	  });
 	  return {
@@ -5105,7 +5966,8 @@ window.Buffer = buffer.Buffer;
 	exports.Btc = Btc$1;
 	exports.TransportWebUSB = TransportWebUSB$1;
 	exports.TransportU2F = TransportU2F$1;
-	exports.Log = index$3;
+	exports.Log = index$4;
+	exports.createHash = index;
 
 	Object.defineProperty(exports, '__esModule', { value: true });
 
@@ -5115,3 +5977,4 @@ window.Btc = NewLedger.Btc.default;
 window.TransportWebUSB = NewLedger.TransportWebUSB.default;
 window.TransportU2F = NewLedger.TransportU2F.default;
 window.Log = NewLedger.Log.default;
+window.createHash = NewLedger.createHash.default;
