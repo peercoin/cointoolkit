@@ -1229,7 +1229,7 @@
 		r.addOpReturnData = function(bytes) {
 				var s = coinjs.script();
 				s.writeOp(106); // OP_RETURN
-				s.writeBytes(Crypto.util.hexToBytes(bytes));
+				s.writeBytes(bytes);
 				o = {};
 				o.value = 0;
 				o.script = s;
