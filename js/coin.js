@@ -274,9 +274,9 @@
 	}
 
 	/* provide a scripthash and return address */
-	coinjs.scripthash2address = function(h){
+	coinjs.scripthash2address = function(h, type){
 		var x = Crypto.util.hexToBytes(h);
-		x.unshift(coinjs.pub);
+		x.unshift(type);
 		var r = x;
 		r = Crypto.SHA256(Crypto.SHA256(r,{asBytes: true}),{asBytes: true});
 		var checksum = r.slice(0,4);
