@@ -502,6 +502,19 @@
 		return false;
 	}
 
+	coinjs.pubkeycompress = function(pubkey) {
+		if (pubkey.length == 130) {
+			var publicKey = Crypto.util.hexToBytes(pubkey);
+			var prefix = (publicKey[64] & 1) !== 0 ? 0x03 : 0x02;
+			var prefixBuffer = Buffer.alloc(1);
+			prefixBuffer[0] = prefix;
+			return Buffer.concat([prefixBuffer, publicKey.slice(1, 1 + 32)]);
+		}
+		else {
+			return pubkey;
+		}
+	}
+
 	coinjs.bech32_polymod = function(values) {
 		var chk = 1;
 		var BECH32_GENERATOR = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];

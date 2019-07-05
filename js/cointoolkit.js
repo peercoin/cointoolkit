@@ -664,13 +664,13 @@ $(document).ready(function() {
 
 	/* ledger */
 
-	async function getLedgerAddress(callback) {
+	async function getLedgerAddress(format, callback) {
 		try {
 			const transport = await window.TransportWebUSB.create();
 			const appBtc = new window.Btc(transport);
 			result = await appBtc.getWalletPublicKey(
 				coinjs.ledgerPath,
-				{verify: false, format: "legacy"}
+				{verify: false, format: format}
 				);
 			callback(result);
 		} catch (e) {
@@ -2237,10 +2237,14 @@ var bcBasedExplorer = {
 				console.log("signature:",coinjs.ledgerPath,result);
 			});
 		} else
-			getLedgerAddress(function(result) {
+			getLedgerAddress("legacy", function(result) {
+				coinjs.compressed = false;
+				if($("#newCompressed").is(":checked")){
+					coinjs.compressed = true;
+				}
 				console.log("address:",coinjs.ledgerPath,result);
 				$("#newGeneratedAddress").val(result.bitcoinAddress);
-				$("#newPubKey").val(result.publicKey);
+				$("#newPubKey").val((coinjs.compressed) ? coinjs.pubkeycompress(result.publicKey) : result.publicKey);
 			}); 
 	});
 
