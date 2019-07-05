@@ -1439,28 +1439,15 @@
 								<b>Network</b>: <br>
 								<p class="text-muted">Select which network you'd like to use for key pair generation.</p>
 								<select class="form-control" id="coinjs_coin">
-									<!-- pubPrefix, scriptPrefix, privPrefix, hdPubPrefix, hdPrivPrefix, broadcastProvider, unspentProvider, getInputAmountProvider, getTransaction, extraTimeField, extraUnitFieldValue, decimalPlaces, symbol, bip44, ledgerPath -->
-									<option value="peercoin" rel="0x37;0x75;0xb7;0x0488b21e;0x0488ade4;false;false;false;true;holy;false;6;PPC;0x6;44'/6'/0'/0/0;">Peercoin</option>
-									<option value="sparklecoin" rel="0x3f;0x7d;0xbf;0x0488b21e;0x0488ade4;true;true;true;true;true;false;6;SPRK;0x6;44'/239'/0'/0/0;">Sparklecoin</option>
-									<option value="nubits" rel="0x19;0x1a;0x96;0x0488b21e;0x0488ade4;false;false;false;false;true;0x42;4;NBT;0xc;;">NuBits</option>
-									<option value="nushares" rel="0x3f;0x40;0x95;0x0488b21e;0x0488ade4;false;false;false;false;true;0x53;4;NSR;0xb;;">NuShares</option>
-									<option value="blockcredits" rel="0x1c;0x1e;0x9a;0x0488b21e;0x0488ade4;false;false;false;false;true;0x43;4;BKC;0x0;;">BlockCredits</option>
-									<option value="blockshares" rel="0x12;0x14;0x99;0x0488b21e;0x0488ade4;false;false;false;false;true;0x38;4;BKS;0x0;;">BlockShares</option>
-
-									<option value="bitcoin" rel="0x00;0x05;0x80;0x0488b21e;0x0488ade4;false;blockr_io;blockr_io;false;false;false;8;BTC;0x0;44'/0'/0'/0/0;">Bitcoin</option>
-									<option value="bitcoin_cash" rel="0x00;0x05;0x80;0x0488b21e;0x0488ade4;false;blockexplorer;blockexplorer;false;false;false;8;BCH;0x0;44'/0'/0'/0/0;">Bitcoin Cash</option>
-									<option value="peercoin_testnet" rel="0x6f;0xc4;0xef;0x043587cf;0x04358394;false;false;false;true;true;false;6;tPPC;0x1;;">Peercoin (testnet)</option>
-									<option value="sparklecoin_testnet" rel="0x7f;0xc4;0xff;0x043587cf;0x04358394;true;true;true;true;true;false;6;tSPRK;0x1;;">Sparklecoin (testnet)</option>
-									<option value="nubits_testnet" rel="0x55;0x56;0xe0;0x043587cf;0x04358394;false;false;false;false;true;0x42;4;tNBT;0x1;;">NuBits (testnet)</option>
-									<option value="nushares_testnet" rel="0x7d;0x7e;0xdf;0x043587cf;0x04358394;false;false;false;false;true;0x53;4;tNSR;0x1;;">NuShares (testnet)</option>
-									<option value="blockcredits_testnet" rel="0x57;0x5a;0xe4;0x043587cf;0x04358394;false;false;false;false;true;0x43;4;tBKC;0x1;;">BlockCredits (testnet)</option>
-									<option value="blockshares_testnet" rel="0x7f;0x82;0xe3;0x043587cf;0x04358394;false;false;false;false;true;0x38;4;tBKS;0x1;;">BlockShares (testnet)</option>
-									<option value="bitcoin_testnet" rel="0x6f;0xc4;0xef;0x043587cf;0x04358394;false;blockrio_bitcointestnet;false;false;false;false;8;tBTC;0x1;;">Bitcoin (testnet)</option>
-									
-									<option value="peershares_default" rel="0x3f;0x7d;0xbf;0x0488b21e;0x0488ade4;false;false;false;true;0x53;4;PSR;0x0;;">Peershares default</option>
-									<option value="peershares_default_test" rel="0x20;0xd4;0xa0;0x043587cf;0x04358394;false;false;false;true;0x53;4;tPSR;0x1;;">Peershares default (testnet)</option>
-
-									<option value="custom" rel="0x00;0x05;0x80;0x0488b21e;0x0488ade4;false;false;false;false;false;false;8;CUSTOM;0x0;;">Custom</option>
+									<!-- pubPrefix, scriptPrefix, privPrefix, hdPubPrefix, hdPrivPrefix, broadcastProvider, unspentProvider, getInputAmountProvider, getTransaction, extraTimeField, extraUnitFieldValue, decimalPlaces, symbol, bip44, ledgerPath, bech32Prefix -->
+									<option value="peercoin" rel="0x37;0x75;0xb7;0x0488b21e;0x0488ade4;false;false;false;true;holy;false;6;PPC;0x6;44'/6'/0'/0/0;pc;">Peercoin</option>
+									<option value="sparklecoin" rel="0x3f;0x7d;0xbf;0x0488b21e;0x0488ade4;true;true;true;true;true;false;6;SPRK;0x6;44'/239'/0'/0/0;;">Sparklecoin</option>
+									<option value="bitcoin" rel="0x00;0x05;0x80;0x0488b21e;0x0488ade4;false;blockr_io;blockr_io;false;false;false;8;BTC;0x0;44'/0'/0'/0/0;bc;">Bitcoin</option>
+									<option value="bitcoin_cash" rel="0x00;0x05;0x80;0x0488b21e;0x0488ade4;false;blockexplorer;blockexplorer;false;false;false;8;BCH;0x0;44'/0'/0'/0/0;;">Bitcoin Cash</option>
+									<option value="peercoin_testnet" rel="0x6f;0xc4;0xef;0x043587cf;0x04358394;false;false;false;true;true;false;6;tPPC;0x1;;tpc;">Peercoin (testnet)</option>
+									<option value="sparklecoin_testnet" rel="0x7f;0xc4;0xff;0x043587cf;0x04358394;true;true;true;true;true;false;6;tSPRK;0x1;;;">Sparklecoin (testnet)</option>
+									<option value="bitcoin_testnet" rel="0x6f;0xc4;0xef;0x043587cf;0x04358394;false;blockrio_bitcointestnet;false;false;false;false;8;tBTC;0x1;;tb;">Bitcoin (testnet)</option>
+									<option value="custom" rel="0x00;0x05;0x80;0x0488b21e;0x0488ade4;false;false;false;false;false;false;8;CUSTOM;0x0;;;">Custom</option>
 								</select>
 							</div>
 						</div>
@@ -1524,6 +1511,10 @@
 								<div class="col-md-3">
 									<b>BIP44 cointype</b>: <br>
 									<input type="text" class="form-control" id="coinjs_bip44">
+								</div>
+								<div class="col-md-3">
+									<b>bech32 prefix</b>: <br>
+									<input type="text" class="form-control" id="coinjs_bech32">
 								</div>
 							</div>
 

@@ -3028,6 +3028,7 @@ var bcBasedExplorer = {
 			coinjs.symbol = $("#coinjs_symbol").val();
 			coinjs.bip44 = $("#coinjs_bip44").val()*1;
 			coinjs.ledgerPath = $("#coinjs_ledger").val();
+			coinjs.bech32.hrp = $("#coinjs_bech32").val()
 			
 			$("#rawSubmitBtn").attr('rel',$("#coinjs_broadcast option:selected").val());
 			$("#redeemFromBtn").attr('rel',$("#coinjs_utxo option:selected").val());
@@ -3181,7 +3182,7 @@ var bcBasedExplorer = {
 
 		$("#coinjs_ledger").val(o[14]);
 
-
+		$("#coinjs_bech32").val(o[15]);
 		// hide/show custom screen
 		if($("option:selected",this).val()=="custom"){
 			$("#settingsCustom").removeClass("hidden");
