@@ -505,10 +505,8 @@
 	coinjs.pubkeycompress = function(pubkey) {
 		if (pubkey.length == 130) {
 			var publicKey = Crypto.util.hexToBytes(pubkey);
-			var prefix = (publicKey[64] & 1) !== 0 ? 0x03 : 0x02;
-			var prefixBuffer = Buffer.alloc(1);
-			prefixBuffer[0] = prefix;
-			return Buffer.concat([prefixBuffer, publicKey.slice(1, 1 + 32)]);
+			var prefix = Crypto.util.hexToBytes((publicKey[64] & 1) !== 0 ? "03" : "02");
+			return Crypto.util.bytesToHex(prefix.concat(publicKey.slice(1, 1 + 32)));
 		}
 		else {
 			return pubkey;
