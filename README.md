@@ -1,11 +1,11 @@
 Cointoolkit
 =======
 
-A Open Source Browser Based Bitcoin Wallet.
+A Open Source Browser Based Peercoin/Bitcoin (and some others) Wallet.
 
-Live version available at https://indiciumfund.github.io/cointoolkit/
+Live version available at https://peercoin.github.io/cointoolkit/
 
-Github URL: https://github.com/indiciumfund/cointoolkit
+Github URL: https://github.com/peercoin/cointoolkit
 
 - Offline Compressed & uncompressed Address creation.
 - Offline Multisignature Address creation.
