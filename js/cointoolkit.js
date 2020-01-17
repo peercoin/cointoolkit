@@ -1116,8 +1116,8 @@ $(document).ready(function() {
 					},
 						success: function(data) {
 						//var obj = data.responseText; //$.parseJSON(data.responseText);
-						if(data.length){
-							$("#rawTransactionStatus").addClass('alert-success').removeClass('alert-danger').removeClass("hidden").html(' Txid: '+data);
+						if(data.result){
+							$("#rawTransactionStatus").addClass('alert-success').removeClass('alert-danger').removeClass("hidden").html(' Txid: '+data.result);
 						} else {
 							$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html(' Unexpected error, please try again').prepend('<span class="glyphicon glyphicon-exclamation-sign"></span>');
 						}
