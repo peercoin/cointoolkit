@@ -1031,7 +1031,7 @@ $(document).ready(function() {
 										if(tx.match(/^[a-f0-9]+$/)){
 											var n = utxo.vout;
 											var script = (redeem.type=="multisig__") ? $("#redeemFrom").val() : data.vout[utxo.vout].scriptPubKey.hex;
-											var amount = (o.satoshis /100000000).toFixed(8);;
+											var amount = (utxo.satoshis /100000000).toFixed(8);;
 											addOutput(tx, n, script, amount);
 										}
 									},
