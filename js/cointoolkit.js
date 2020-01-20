@@ -922,7 +922,7 @@ $(document).ready(function() {
 								'<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="'+endpoint+'/ext/listunspent/'+
 								redeem.addr+'" target="_blank">'+redeem.addr+'</a>');
 							var utxos = data;
-							var i = 0;
+							var i = utxos.length - 1;
 							for(var k = utxos.length - 1; k >= 0; --k){
 								$.ajax ({
 									type: "GET",
@@ -931,7 +931,7 @@ $(document).ready(function() {
 									error: function(data) {
 									},
 									success: function(data) {
-										var utxo = utxos[i ++];
+										var utxo = utxos[i --];
 										var tx = ""+utxo.txid;
 										if(tx.match(/^[a-f0-9]+$/)){
 											var n = utxo.vout;
