@@ -1004,7 +1004,7 @@ $(document).ready(function() {
 				var msgSucess = '<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="' + endpoint + '/ext/listunspent/'+redeem.addr+'" target="_blank">'+redeem.addr+'</a>'
 				var msgError = '<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs! Is <a href="' + endpoint + '/">' + endpoint + '/</a> down?';
 				$.ajax ({
-					type: "GET",
+					type: "POST",
 					url: "" + endpoint + "/api/utxo/"+redeem.addr,
 					dataType: "json",
 					error: function(data) {
@@ -1021,7 +1021,7 @@ $(document).ready(function() {
 							for(i = utxos.length - 1; i >= 0; --i){
 								var utxo = utxos[i];
 								$.ajax ({
-									type: "GET",
+									type: "POST",
 									url: "" + endpoint + "/api/tx/"+utxo.txid,
 									dataType: "json",
 									error: function(data) {
@@ -1055,7 +1055,7 @@ $(document).ready(function() {
 								   var msgSucess = '<span class="glyphicon glyphicon-info-sign"></span> Retrieved transaction info from txid <a href="' + endpoint + '/ext/txinfo/'+txid+'" target="_blank">'+txid+'</a>'
 								   var msgError = '<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs! Is <a href="' + endpoint + '/">' + endpoint + '/</a> down?';
 					$.ajax ({
-						type: "GET",
+						type: "POST",
 						url: "" + endpoint + "/api/tx/"+txid,
 						dataType: "text",
 						error: function(data) {
@@ -1071,18 +1071,18 @@ $(document).ready(function() {
 								callback(false);
 							}
 						}
-//,
-//						  complete: function(data, status) {
-//							  $("#redeemFromBtn").html("Load").attr('disabled',false);
-//							  totalInputAmount();
-//						  }
+						,
+						  complete: function(data, status) {
+							  $("#redeemFromBtn").html("Load").attr('disabled',false);
+							  totalInputAmount();
+						  }
 					});
 				}
 			},
 		getInputAmount: function(endpoint) {
 			return function(txid, index, callback) {
 				$.ajax ({
-					type: "GET",
+					type: "POST",
 					url: "" + endpoint + "/api/tx/"+txid,
 					dataType: "json",
 					error: function(data) {
@@ -1104,7 +1104,7 @@ $(document).ready(function() {
 				var orig_html = $(thisbtn).html();
 				$(thisbtn).html('Please wait, loading... <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>').attr('disabled',true);
 				$.ajax ({
-					type: "GET",
+					type: "POST",
 					url: "" + endpoint + "/api/sendtx/"+$("#rawTransaction").val(),
 					dataType: "text", //"json",
 					error: function(data, status, error) {
@@ -1979,36 +1979,30 @@ var bcBasedExplorer = {
 		},
 		peercoin: {
 			listUnspent: {
-				"iquidus": peerBlockbookBasedExplorer.listUnspent('https://blockbook.peercoin.net'),
-				"cryptoid": peerBasedExplorer.listUnspent('https://chainz.cryptoid.info')
+				"blockbook": peerBlockbookBasedExplorer.listUnspent('https://blockbook.peercoin.net')
 			},
 			broadcast: {
-				"iquidus": peerBlockbookBasedExplorer.broadcast('https://blockbook.peercoin.net'),
-				"cryptoid": peerBasedExplorer.listUnspent('https://chainz.cryptoid.info')
+				"blockbook": peerBlockbookBasedExplorer.broadcast('https://blockbook.peercoin.net')
 			},
 			getTransaction: {
-				"iquidus": peerBlockbookBasedExplorer.getTransaction('https://blockbook.peercoin.net')
+				"blockbook": peerBlockbookBasedExplorer.getTransaction('https://blockbook.peercoin.net')
 			},
 			getInputAmount: {
-				"iquidus": peerBlockbookBasedExplorer.getInputAmount('https://blockbook.peercoin.net'),
-				"cryptoid": peerBasedExplorer.listUnspent('https://chainz.cryptoid.info')
+				"blockbook": peerBlockbookBasedExplorer.getInputAmount('https://blockbook.peercoin.net')
 			}
 		},
 		peercoin_testnet: {
 			listUnspent: {
-				"iquidus": peerBlockbookBasedExplorer.listUnspent('https://tblockbook.peercoin.net'),
-				"atlas": mercatorBasedExplorer.listUnspent('http://137.74.40.81:4000/')
+				"blockbook": peerBlockbookBasedExplorer.listUnspent('https://tblockbook.peercoin.net')
 			},
 			broadcast: {
-				"iquidus": peerBlockbookBasedExplorer.broadcast('https://tblockbook.peercoin.net'),
-				"atlas": mercatorBasedExplorer.broadcast('http://137.74.40.81:4000/')
+				"blockbook": peerBlockbookBasedExplorer.broadcast('https://tblockbook.peercoin.net')
 			},
 			getTransaction: {
-				"iquidus": peerBlockbookBasedExplorer.getTransaction('https://tblockbook.peercoin.net')
+				"blockbook": peerBlockbookBasedExplorer.getTransaction('https://tblockbook.peercoin.net')
 			},
 			getInputAmount: {
-				"iquidus": peerBlockbookBasedExplorer.getInputAmount('https://tblockbook.peercoin.net'),
-				"atlas": mercatorBasedExplorer.getInputAmount('http://137.74.40.81:4000/')
+				"blockbook": peerBlockbookBasedExplorer.getInputAmount('https://tblockbook.peercoin.net')
 			}
 		},
 		nubits: {
