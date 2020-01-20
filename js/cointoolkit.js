@@ -1004,7 +1004,7 @@ $(document).ready(function() {
 				var msgSucess = '<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="' + endpoint + '/ext/listunspent/'+redeem.addr+'" target="_blank">'+redeem.addr+'</a>'
 				var msgError = '<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs! Is <a href="' + endpoint + '/">' + endpoint + '/</a> down?';
 				$.ajax ({
-					type: "POST",
+					type: "GET",
 					url: "" + endpoint + "/api/utxo/"+redeem.addr,
 					dataType: "json",
 					error: function(data) {
@@ -1021,7 +1021,7 @@ $(document).ready(function() {
 							for(i = utxos.length - 1; i >= 0; --i){
 								var utxo = utxos[i];
 								$.ajax ({
-									type: "POST",
+									type: "GET",
 									url: "" + endpoint + "/api/tx/"+utxo.txid,
 									dataType: "json",
 									error: function(data) {
@@ -1055,7 +1055,7 @@ $(document).ready(function() {
 								   var msgSucess = '<span class="glyphicon glyphicon-info-sign"></span> Retrieved transaction info from txid <a href="' + endpoint + '/ext/txinfo/'+txid+'" target="_blank">'+txid+'</a>'
 								   var msgError = '<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs! Is <a href="' + endpoint + '/">' + endpoint + '/</a> down?';
 					$.ajax ({
-						type: "POST",
+						type: "GET",
 						url: "" + endpoint + "/api/tx/"+txid,
 						dataType: "text",
 						error: function(data) {
@@ -1082,7 +1082,7 @@ $(document).ready(function() {
 		getInputAmount: function(endpoint) {
 			return function(txid, index, callback) {
 				$.ajax ({
-					type: "POST",
+					type: "GET",
 					url: "" + endpoint + "/api/tx/"+txid,
 					dataType: "json",
 					error: function(data) {
@@ -1105,7 +1105,8 @@ $(document).ready(function() {
 				$(thisbtn).html('Please wait, loading... <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>').attr('disabled',true);
 				$.ajax ({
 					type: "POST",
-					url: "" + endpoint + "/api/sendtx/"+$("#rawTransaction").val(),
+					url: "" + endpoint + "/api/sendtx/",
+					data: $("#rawTransaction").val(),
 					dataType: "text", //"json",
 					error: function(data, status, error) {
 						var obj = data.responseText; //$.parseJSON(data.responseText);
@@ -1114,10 +1115,10 @@ $(document).ready(function() {
 						r = (r!='') ? r : ' Failed to broadcast'; // build response 
 						$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html(r).prepend('<span class="glyphicon glyphicon-exclamation-sign"></span>');
 					},
-						success: function(data) {
-						//var obj = data.responseText; //$.parseJSON(data.responseText);
-						if(data.result){
-							$("#rawTransactionStatus").addClass('alert-success').removeClass('alert-danger').removeClass("hidden").html(' Txid: '+data.result);
+					success: function(data) {
+						var obj = $.parseJSON(data);
+						if(obj.result){
+							$("#rawTransactionStatus").addClass('alert-success').removeClass('alert-danger').removeClass("hidden").html(' Txid: '+obj.result);
 						} else {
 							$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html(' Unexpected error, please try again').prepend('<span class="glyphicon glyphicon-exclamation-sign"></span>');
 						}
