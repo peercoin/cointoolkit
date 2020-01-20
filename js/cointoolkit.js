@@ -2356,9 +2356,17 @@ $(document).ready(function() {
 
 			$("#transactionCreate").removeClass("hidden");
 
-			if($("#transactionFee").val()>=0.1){
-				$("#modalWarningFeeAmount").html($("#transactionFee").val());
-				$("#modalWarningFee").modal("show");
+			if ($("#coinSelector").val() == "peercoin" || $("#coinSelector").val() == "peercoin_testnet") {
+				if ($("#transactionFee").val()>=0.1){
+					$("#modalWarningFeeAmount").html($("#transactionFee").val());
+					$("#modalWarningFee").modal("show");
+				}	
+			}
+			else {
+				if ($("#transactionFee").val()>=0.011){
+					$("#modalWarningFeeAmount").html($("#transactionFee").val());
+					$("#modalWarningFee").modal("show");
+				}
 			}
 		} else {
 			$("#transactionCreateStatus").removeClass("hidden").html("One or more input or output is invalid").fadeOut().fadeIn();
