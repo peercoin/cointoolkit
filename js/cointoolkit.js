@@ -2434,6 +2434,13 @@ $(document).ready(function() {
 		var host = $(this).attr('rel');
 		providers[$("#coinSelector").val()].broadcast[host](this);
 	});
+	
+	/* redeem for trim user's input */
+	$("#redeemFrom").focusout(function(){
+		var wif = $("#redeemFrom").val();
+		wif = wif.replace(/\s/g, "");
+		$("#redeemFrom").val(wif);
+	});
 
 	/* redeem from button code */
 	$("#redeemFromBtn").click(function(){
