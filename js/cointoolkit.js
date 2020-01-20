@@ -2356,7 +2356,7 @@ $(document).ready(function() {
 
 			$("#transactionCreate").removeClass("hidden");
 
-			if($("#transactionFee").val()>=0.011){
+			if($("#transactionFee").val()>=0.1){
 				$("#modalWarningFeeAmount").html($("#transactionFee").val());
 				$("#modalWarningFee").modal("show");
 			}
