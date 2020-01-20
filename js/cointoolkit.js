@@ -998,6 +998,140 @@ $(document).ready(function() {
 		}
 	};
 
+	var peerBlockbookBasedExplorer = {
+		listUnspent: function(endpoint) {
+			return function(redeem){
+				var msgSucess = '<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="' + endpoint + '/ext/listunspent/'+redeem.addr+'" target="_blank">'+redeem.addr+'</a>'
+				var msgError = '<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs! Is <a href="' + endpoint + '/">' + endpoint + '/</a> down?';
+				$.ajax ({
+					type: "GET",
+					url: "" + endpoint + "/api/utxo/"+redeem.addr,
+					dataType: "json",
+					error: function(data) {
+						$("#redeemFromStatus").removeClass('hidden').html(msgError);
+						$("#redeemFromBtn").html("Load").attr('disabled',false);
+					},
+					success: function(data) {
+						if (coinjs.debug) {console.log(data)};
+						if ((data)){
+							$("#redeemFromAddress").removeClass('hidden').html(
+								'<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="'+endpoint+'/ext/listunspent/'+
+								redeem.addr+'" target="_blank">'+redeem.addr+'</a>');
+							var utxos = data;
+							for(i = utxos.length - 1; i >= 0; --i){
+								var utxo = utxos[i];
+								$.ajax ({
+									type: "GET",
+									url: "" + endpoint + "/api/tx/"+utxo.txid,
+									dataType: "json",
+									error: function(data) {
+									},
+									success: function(data) {
+										var tx = ""+utxo.txid;
+										if(tx.match(/^[a-f0-9]+$/)){
+											var n = utxo.vout;
+											var script = (redeem.type=="multisig__") ? $("#redeemFrom").val() : data.vout[utxo.vout].scriptPubKey.hex;
+											var amount = (utxo.satoshis /100000000).toFixed(8);;
+											addOutput(tx, n, script, amount);
+										}
+									},
+									complete: function(data, status) {
+									}
+								});
+							}
+						} else {
+							$("#redeemFromStatus").removeClass('hidden').html('<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs.');
+						}
+					},
+					complete: function(data, status) {
+						$("#redeemFromBtn").html("Load").attr('disabled',false);
+						totalInputAmount();
+					}
+				});
+			}
+		},
+		getTransaction: function(endpoint) {
+			return function(txid, index, callback){
+								   var msgSucess = '<span class="glyphicon glyphicon-info-sign"></span> Retrieved transaction info from txid <a href="' + endpoint + '/ext/txinfo/'+txid+'" target="_blank">'+txid+'</a>'
+								   var msgError = '<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs! Is <a href="' + endpoint + '/">' + endpoint + '/</a> down?';
+					$.ajax ({
+						type: "GET",
+						url: "" + endpoint + "/api/tx/"+txid,
+						dataType: "text",
+						error: function(data) {
+							$("#redeemFromStatus").removeClass('hidden').html(msgError);
+							$("#redeemFromBtn").html("Load").attr('disabled',false);
+						},
+						success: function(data) {
+							if (coinjs.debug) {console.log(data)};
+							if (data.hex){
+								callback([data.hex,index]);
+							} else {
+								$("#redeemFromStatus").removeClass('hidden').html('<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve transation info');
+								callback(false);
+							}
+						}
+						,
+						  complete: function(data, status) {
+							  $("#redeemFromBtn").html("Load").attr('disabled',false);
+							  totalInputAmount();
+						  }
+					});
+				}
+			},
+		getInputAmount: function(endpoint) {
+			return function(txid, index, callback) {
+				$.ajax ({
+					type: "GET",
+					url: "" + endpoint + "/api/tx/"+txid,
+					dataType: "json",
+					error: function(data) {
+						callback(false);
+					},
+					success: function(data) {
+						if (coinjs.debug) {console.log(data)};
+						var result = false;
+						for(var i=0;i<data.vout.length;i++){
+							if (data.vout[i].n == index) {result=data.vout[i].value*1000000};
+						}
+						callback(result);
+					},
+				});
+			}
+		},
+		broadcast: function(endpoint) {
+			return function(thisbtn){
+				var orig_html = $(thisbtn).html();
+				$(thisbtn).html('Please wait, loading... <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>').attr('disabled',true);
+				$.ajax ({
+					type: "POST",
+					url: "" + endpoint + "/api/sendtx/",
+					data: $("#rawTransaction").val(),
+					dataType: "text", //"json",
+					error: function(data, status, error) {
+						var obj = data.responseText; //$.parseJSON(data.responseText);
+						var r = '';
+						r += obj.length ? obj : '';//(obj.data.tx_hex) ? obj.data.tx_hex : '';
+						r = (r!='') ? r : ' Failed to broadcast'; // build response 
+						$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html(r).prepend('<span class="glyphicon glyphicon-exclamation-sign"></span>');
+					},
+					success: function(data) {
+						var obj = $.parseJSON(data);
+						if(obj.result){
+							$("#rawTransactionStatus").addClass('alert-success').removeClass('alert-danger').removeClass("hidden").html(' Txid: '+obj.result);
+						} else {
+							$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html(' Unexpected error, please try again').prepend('<span class="glyphicon glyphicon-exclamation-sign"></span>');
+						}
+					},
+					complete: function(data, status) {
+						$("#rawTransactionStatus").fadeOut().fadeIn();
+						$(thisbtn).val('Submit').attr('disabled',false);				
+					}
+				});
+			}
+		}
+	};
+
 
 	var peerBasedExplorer = {
 		listUnspent: function(endpoint) {
@@ -1846,36 +1980,30 @@ var bcBasedExplorer = {
 		},
 		peercoin: {
 			listUnspent: {
-				"iquidus": iquidusBasedExplorer.listUnspent('https://explorer.peercoin.net'),
-				"cryptoid": peerBasedExplorer.listUnspent('https://chainz.cryptoid.info')
+				"blockbook": peerBlockbookBasedExplorer.listUnspent('https://blockbook.peercoin.net')
 			},
 			broadcast: {
-				"iquidus": iquidusBasedExplorer.broadcast('https://explorer.peercoin.net'),
-				"cryptoid": peerBasedExplorer.listUnspent('https://chainz.cryptoid.info')
+				"blockbook": peerBlockbookBasedExplorer.broadcast('https://blockbook.peercoin.net')
 			},
 			getTransaction: {
-				"iquidus": iquidusBasedExplorer.getTransaction('https://explorer.peercoin.net')
+				"blockbook": peerBlockbookBasedExplorer.getTransaction('https://blockbook.peercoin.net')
 			},
 			getInputAmount: {
-				"iquidus": iquidusBasedExplorer.getInputAmount('https://explorer.peercoin.net'),
-				"cryptoid": peerBasedExplorer.listUnspent('https://chainz.cryptoid.info')
+				"blockbook": peerBlockbookBasedExplorer.getInputAmount('https://blockbook.peercoin.net')
 			}
 		},
 		peercoin_testnet: {
 			listUnspent: {
-				"iquidus": iquidusBasedExplorer.listUnspent('https://testnet-explorer.peercoin.net'),
-				"atlas": mercatorBasedExplorer.listUnspent('http://137.74.40.81:4000/')
+				"blockbook": peerBlockbookBasedExplorer.listUnspent('https://tblockbook.peercoin.net')
 			},
 			broadcast: {
-				"iquidus": iquidusBasedExplorer.broadcast('https://testnet-explorer.peercoin.net'),
-				"atlas": mercatorBasedExplorer.broadcast('http://137.74.40.81:4000/')
+				"blockbook": peerBlockbookBasedExplorer.broadcast('https://tblockbook.peercoin.net')
 			},
 			getTransaction: {
-				"iquidus": iquidusBasedExplorer.getTransaction('https://testnet-explorer.peercoin.net')
+				"blockbook": peerBlockbookBasedExplorer.getTransaction('https://tblockbook.peercoin.net')
 			},
 			getInputAmount: {
-				"iquidus": iquidusBasedExplorer.getInputAmount('https://testnet-explorer.peercoin.net'),
-				"atlas": mercatorBasedExplorer.getInputAmount('http://137.74.40.81:4000/')
+				"blockbook": peerBlockbookBasedExplorer.getInputAmount('https://tblockbook.peercoin.net')
 			}
 		},
 		nubits: {
