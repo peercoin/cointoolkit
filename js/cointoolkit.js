@@ -922,8 +922,8 @@ $(document).ready(function() {
 								'<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="'+endpoint+'/ext/listunspent/'+
 								redeem.addr+'" target="_blank">'+redeem.addr+'</a>');
 							var utxos = data;
-							var i = utxos.length - 1;
-							for(var k = utxos.length - 1; k >= 0; --k){
+							var calcCount = 0;
+							for(k = utxos.length - 1; k >= 0; --k){
 								$.ajax ({
 									type: "GET",
 									url: "" + endpoint + "/api/tx/"+utxos[k].txid,
@@ -931,16 +931,27 @@ $(document).ready(function() {
 									error: function(data) {
 									},
 									success: function(data) {
-										var utxo = utxos[i --];
+										for (i = 0 ; i < utxos.length ; i ++){
+											if (utxos[i].txid == data.txid){
+												break;
+											}
+										}
+										var utxo = utxos[i];
 										var tx = ""+utxo.txid;
 										if(tx.match(/^[a-f0-9]+$/)){
 											var n = utxo.vout;
 											var script = (redeem.type=="multisig__") ? $("#redeemFrom").val() : data.vout[utxo.vout].scriptPubKey.hex;
-											var amount = (utxo.satoshis /100000000).toFixed(8);;
+											var amount = (utxo.satoshis /100000000).toFixed(8);
 											addOutput(tx, n, script, amount);
 										}
+
+										calcCount ++;
 									},
 									complete: function(data, status) {
+										if (calcCount == utxos.length) {
+											$("#redeemFromBtn").html("Load").attr('disabled',false);
+											totalInputAmount();
+										}
 									}
 								});
 							}
