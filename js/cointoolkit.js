@@ -2443,11 +2443,13 @@ $(document).ready(function() {
 		providers[$("#coinSelector").val()].broadcast[host](this);
 	});
 	
-	/* redeem for trim user's input */
+	/* trim user's input */
 	$("#redeemFrom").focusout(function(){
-		var wif = $("#redeemFrom").val();
-		wif = wif.replace(/\s/g, "");
-		$("#redeemFrom").val(wif);
+		$(this).val($(this).val().replace(/\s/g, ""));
+	});
+
+	$("#verifyScript").focusout(function(){
+		$(this).val($(this).val().replace(/\s/g, ""));
 	});
 
 	/* redeem from button code */
