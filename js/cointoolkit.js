@@ -2444,11 +2444,18 @@ $(document).ready(function() {
 	});
 	
 	/* redeem for trim user's input */
-	$("#redeemFrom").focusout(function(){
-		var wif = $("#redeemFrom").val();
-		wif = wif.replace(/\s/g, "");
-		$("#redeemFrom").val(wif);
-	});
+	var trimInputs = ["redeemFrom", "verifyScript"];
+	for (i = 0 ; i < trimInputs.length ; i ++) {
+		item = "#" + trimInputs[i];
+		console.log(item);
+		$(item).focusout(function(){
+			var wif = $(this).val();
+			wif = wif.replace(/\s/g, "");
+			console.log(wif);
+			$(this).val(wif);
+		});
+	}
+
 
 	/* redeem from button code */
 	$("#redeemFromBtn").click(function(){
