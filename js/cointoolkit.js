@@ -895,7 +895,7 @@ $(document).ready(function() {
 					},
 					complete: function(data, status) {
 						$("#rawTransactionStatus").fadeOut().fadeIn();
-						$(thisbtn).val('Submit').attr('disabled',false);				
+						$(thisbtn).html(orig_html).attr('disabled',false);				
 					}
 				});
 			}
@@ -1041,7 +1041,7 @@ $(document).ready(function() {
 					},
 					complete: function(data, status) {
 						$("#rawTransactionStatus").fadeOut().fadeIn();
-						$(thisbtn).val('Submit').attr('disabled',false);				
+						$(thisbtn).html(orig_html).attr('disabled',false);				
 					}
 				});
 			}
