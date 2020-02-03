@@ -940,7 +940,7 @@ $(document).ready(function() {
 										var tx = ""+utxo.txid;
 										if(tx.match(/^[a-f0-9]+$/)){
 											var n = utxo.vout;
-											var script = (redeem.type=="multisig__") ? $("#redeemFrom").val() : data.vout[utxo.vout].scriptPubKey.hex;
+											var script = (redeem.redeemscript==true) ? redeem.decodedRs : data.vout[utxo.vout].scriptPubKey.hex;
 											var amount = (utxo.satoshis /100000000).toFixed(8);
 											addOutput(tx, n, script, amount);
 										}
