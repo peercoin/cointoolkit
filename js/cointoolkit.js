@@ -236,7 +236,7 @@ $(document).ready(function() {
 				$("#verifyRsDataHodl .date").val(decode['checklocktimeverify'] >= 500000000? moment.unix(decode['checklocktimeverify']).format("MM/DD/YYYY HH:mm") : decode['checklocktimeverify']);
 				$("#verifyRsData").removeClass("hidden");
 				$("#verifyRsDataHodl").removeClass('hidden');
-				$(".verifyLink").attr('href','?verify='+$("#verifyScript").val());
+				$(".verifyLink").val(document.location.origin+''+document.location.pathname+'?mode='+$("#coinSelector").val()+'&verify='+$("#verifyScript").val());
 				return true;
 			}
 		}
@@ -2477,6 +2477,15 @@ $(document).ready(function() {
 
 		var host = $(this).attr('rel');
 		providers[$("#coinSelector").val()].listUnspent[host](redeem);
+
+		if($("#redeemFromStatus").hasClass("hidden")) {
+			// An ethical dilemma: Should we automatically set nLockTime?
+			if(redeem.from == 'redeemScript' && redeem.type == "hodl__") {
+				$("#nLockTime").val(redeem.decodescript.checklocktimeverify);
+			} else {
+				$("#nLockTime").val(0);
+			}
+		}
 	});
 
 	$("#opReturn").change(function() {
