@@ -1417,6 +1417,11 @@
 			var zero = coinjs.numToBytes(0, 32);
 			var version = coinjs.numToBytes(parseInt(this.version), 4);
 
+			var timestamp = false;
+			if(this.nTime>0){
+				timestamp = coinjs.numToBytes(parseInt(this.nTime), 4);
+			}
+
 			var bufferTmp = [];
 			if(!(sigHashType >= 80)){	// not sighash anyonecanpay 
 				for(var i = 0; i < this.ins.length; i++){
@@ -1460,6 +1465,9 @@
 
 			var buffer = []; 
 			buffer = buffer.concat(version);
+			if (timestamp) {
+				buffer = buffer.concat(timestamp);
+			}
 			buffer = buffer.concat(hashPrevouts);
 			buffer = buffer.concat(hashSequence);
 			buffer = buffer.concat(outpoint);
