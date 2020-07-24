@@ -973,7 +973,7 @@ $(document).ready(function() {
 					$.ajax ({
 						type: "GET",
 						url: "" + endpoint + "/api/tx/"+txid,
-						dataType: "text",
+						dataType: "json",
 						error: function(data) {
 							$("#redeemFromStatus").removeClass('hidden').html(msgError);
 							$("#redeemFromBtn").html("Load").attr('disabled',false);
