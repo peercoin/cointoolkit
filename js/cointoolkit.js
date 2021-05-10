@@ -1436,34 +1436,6 @@ $(document).ready(function() {
 			broadcast: {
 			}
 		},
-		sparklecoin: {
-			listUnspent: {
-				"iquidus": iquidusBasedExplorer.listUnspent('https://explorer.sparklecoin.com')
-			},
-			broadcast: {
-				"iquidus": iquidusBasedExplorer.broadcast('https://explorer.sparklecoin.com')
-			},
-			getTransaction: {
-				"iquidus": iquidusBasedExplorer.getTransaction('https://explorer.sparklecoin.com')
-			},
-			getInputAmount: {
-				"iquidus": iquidusBasedExplorer.getInputAmount('https://explorer.sparklecoin.com')
-			}
-		},
-		sparklecoin_testnet: {
-			listUnspent: {
-				"iquidus": iquidusBasedExplorer.listUnspent('https://tseed.sparklecoin.com')
-			},
-			broadcast: {
-				"iquidus": iquidusBasedExplorer.broadcast('https://tseed.sparklecoin.com')
-			},
-			getTransaction: {
-				"iquidus": iquidusBasedExplorer.getInputAmount('https://tseed.sparklecoin.com')
-			},
-			getInputAmount: {
-				"iquidus": iquidusBasedExplorer.getInputAmount('https://tseed.sparklecoin.com')
-			}
-		},
 		peercoin: {
 			listUnspent: {
 				"blockbook": peerBlockbookBasedExplorer.listUnspent('https://blockbook.peercoin.net')
